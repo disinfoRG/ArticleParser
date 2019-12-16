@@ -57,15 +57,17 @@ def export_publications():
             rename_col(publication, "publication_id", "id")
             rename_col(publication, "publication_text", "text")
             for col in ["hashtags", "urls", "keywords", "tags"]:
-                publication.update({col: json.loads(publication[col])})
+                if publication[col] is not None:
+                    publication.update({col: json.loads(publication[col])})
             for datetime_col in ["posted_at", "first_seen_at", "last_updated_at"]:
-                publication.update(
-                    {
-                        datetime_col: datetime.datetime.fromtimestamp(
-                            publication[datetime_col]
-                        ).isoformat()
-                    }
-                )
+                if publication[datetime_col] is not None:
+                    publication.update(
+                        {
+                            datetime_col: datetime.datetime.fromtimestamp(
+                                publication[datetime_col]
+                            ).isoformat()
+                        }
+                    )
             return publication
 
         for p in rows:
