@@ -1,3 +1,7 @@
+*.json
+*.csv
+*.jsonl
+*.pickle
 
 ## Python
 # Byte-compiled / optimized / DLL files
