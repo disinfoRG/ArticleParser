@@ -42,7 +42,7 @@ class CleanHTML:
         # guess_date = htmldate.find_date(self.raw_data)
 
         # article text
-        text = " ".join([" ".join(x.text.split()) for x in soup.find_all("p")])
+        text = "\n".join([" ".join(x.text.split()) for x in soup.find_all("p")])
 
         # links
         external_links = [x["href"] for x in soup.find_all("a", href=lambda x: x)]
