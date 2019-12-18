@@ -75,7 +75,11 @@ def transform_producers(rows):
 
 def producers_saver(producers):
     with open(producers_filename, mode="w") as fp:
-        json.dump(producers, fp)
+        json.dump(producers, fp, ensure_ascii=False)
+
+
+def producers_dumper(producers):
+    print(json.dumps(producers, ensure_ascii=False))
 
 
 def publications_getter(db, offset=0, limit=1000):
@@ -110,21 +114,45 @@ def publications_saver(publications):
         writer.write_all(publications)
 
 
+def publications_dumper(publications):
+    for p in publications:
+        print(json.dumps(p, ensure_ascii=False))
+
+
 if __name__ == "__main__":
     import logging
+    import sys
 
     logging.basicConfig(level=logging.DEBUG)
 
-    runner(
-        from_db=queries,
-        getter=producers_getter,
-        transformer=transform_producers,
-        saver=producers_saver,
-    )
+    if len(sys.argv) == 1:
+        runner(
+            from_db=queries,
+            getter=producers_getter,
+            transformer=transform_producers,
+            saver=producers_saver,
+        )
 
-    runner(
-        from_db=queries,
-        getter=publications_getter,
-        transformer=transform_publications,
-        saver=publications_saver,
-    )
+        runner(
+            from_db=queries,
+            getter=publications_getter,
+            transformer=transform_publications,
+            saver=publications_saver,
+        )
+    elif sys.argv[1] == "producers":
+        runner(
+            from_db=queries,
+            getter=producers_getter,
+            transformer=transform_producers,
+            saver=producers_dumper,
+        )
+
+    elif sys.argv[1] == "publications":
+        runner(
+            from_db=queries,
+            getter=publications_getter,
+            transformer=transform_publications,
+            saver=publications_dumper,
+        )
+    else:
+        print(f"Unknown command '{sys.argv}'")
