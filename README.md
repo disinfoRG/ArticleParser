@@ -21,9 +21,8 @@ $ alembic upgrade head
 Then
 
 ```sh
-$ cd parser
-$ python ./parser.py
-$ cd ..
+$ python parser/producer_parser.py
+$ python parser/publication_parser.py
 $ python publisher/export.py
 ```
 
