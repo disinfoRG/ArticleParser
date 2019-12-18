@@ -5,78 +5,126 @@ load_dotenv()
 import os
 import pugsql
 import json
+import jsonlines
 import datetime
 
 queries = pugsql.module("queries/parser")
 queries.connect(os.getenv("DB_URL"))
 
+producers_filename = "producers.json"
+publications_filename = "publications.jsonl"
+
+
+def processor(items, saver, transformer):
+    try:
+        transformed = transformer(items)
+    except Exception as e:
+        logging.error(e)
+    else:
+        try:
+            saver(list(transformed))
+        except Exception as e:
+            logging.error(e)
+
+
+def runner(from_db, getter, saver, transformer, paginate_len=100):
+    offset, limit = 0, paginate_len
+    while True:
+        items = list(getter(from_db, offset=offset, limit=limit))
+        if len(items) == 0:
+            break
+        logging.debug(f"processing items {offset} to {offset + limit}")
+        processor(items=items, saver=saver, transformer=transformer)
+        offset += limit
+
 
 def rename_col(d, oldname, newname):
-    d[newname] = d[oldname]
-    del d[oldname]
-    return d
+    try:
+        d[newname] = d[oldname]
+        del d[oldname]
+        return d
+    except Exception as e:
+        print(f"Cannot rename column '{oldname}' to '{newname}': {d}")
 
 
-def export_producers():
-
-    producers = queries.get_all_producers()
-
-    def process_producers(rows):
-        def process(producer):
-            rename_col(producer, "producer_id", "id")
-            for json_col in ["languages", "licenses", "followership"]:
-                producer.update({json_col: json.loads(producer[json_col])})
-            for datetime_col in ["first_seen_at", "last_updated_at"]:
-                producer.update(
-                    {
-                        datetime_col: datetime.datetime.fromtimestamp(
-                            producer[datetime_col]
-                        ).isoformat()
-                        if producer[datetime_col]
-                        else None
-                    }
-                )
-            return producer
-
-        for p in rows:
-            yield process(p)
-
-    producers_filename = "producers.json"
-
-    with open(producers_filename, "w") as fp:
-        json.dump(list(process_producers(producers)), fp)
+def producers_getter(db, offset=0, limit=1000):
+    return db.get_all_producers(offset=offset, limit=limit)
 
 
-def export_publications():
-    publications = queries.get_all_publications()
+def transform_producer(producer):
+    rename_col(producer, "producer_id", "id")
+    for json_col in ["languages", "licenses", "followership"]:
+        producer.update({json_col: json.loads(producer[json_col])})
+    for datetime_col in ["first_seen_at", "last_updated_at"]:
+        producer.update(
+            {
+                datetime_col: datetime.datetime.fromtimestamp(
+                    producer[datetime_col]
+                ).isoformat()
+                if producer[datetime_col]
+                else None
+            }
+        )
+    return producer
 
-    def process_publications(rows):
-        def process(publication):
-            rename_col(publication, "publication_id", "id")
-            rename_col(publication, "publication_text", "text")
-            for col in ["hashtags", "urls", "keywords", "tags"]:
-                if publication[col] is not None:
-                    publication.update({col: json.loads(publication[col])})
-            for datetime_col in ["posted_at", "first_seen_at", "last_updated_at"]:
-                if publication[datetime_col] is not None:
-                    publication.update(
-                        {
-                            datetime_col: datetime.datetime.fromtimestamp(
-                                publication[datetime_col]
-                            ).isoformat()
-                        }
-                    )
-            return publication
 
-        for p in rows:
-            yield process(p)
+def transform_producers(rows):
+    for p in rows:
+        yield transform_producer(p)
 
-    publications_filename = "publications.json"
 
-    with open(publications_filename, "w") as fp:
-        json.dump(list(process_publications(publications)), fp)
+def producers_saver(producers):
+    with open(producers_filename, mode="w") as fp:
+        json.dump(producers, fp)
+
+
+def publications_getter(db, offset=0, limit=1000):
+    return db.get_all_publications(limit=limit, offset=offset)
+
+
+def transform_publication(publication):
+    rename_col(publication, "publication_id", "id")
+    rename_col(publication, "publication_text", "text")
+    for col in ["hashtags", "urls", "keywords", "tags"]:
+        if publication[col] is not None:
+            publication.update({col: json.loads(publication[col])})
+    for datetime_col in ["posted_at", "first_seen_at", "last_updated_at"]:
+        if publication[datetime_col] is not None:
+            publication.update(
+                {
+                    datetime_col: datetime.datetime.fromtimestamp(
+                        publication[datetime_col]
+                    ).isoformat()
+                }
+            )
+    return publication
+
+
+def transform_publications(rows):
+    for p in rows:
+        yield transform_publication(p)
+
+
+def publications_saver(publications):
+    with jsonlines.open(publications_filename, mode="a") as writer:
+        writer.write_all(publications)
 
 
 if __name__ == "__main__":
-    export_producers()
-    export_publications()
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
+
+    runner(
+        from_db=queries,
+        getter=producers_getter,
+        transformer=transform_producers,
+        saver=producers_saver,
+    )
+
+    runner(
+        from_db=queries,
+        getter=publications_getter,
+        transformer=transform_publications,
+        saver=publications_saver,
+    )
