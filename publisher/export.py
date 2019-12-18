@@ -3,15 +3,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
-import sys
-from pathlib import Path
 import pugsql
 import json
 import datetime
 
-project_root = Path(os.path.dirname(__file__))
-
-queries = pugsql.module(project_root/"queries")
+queries = pugsql.module("queries/parser")
 queries.connect(os.getenv("DB_URL"))
 
 
