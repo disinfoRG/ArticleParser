@@ -25,9 +25,6 @@ class CleanHTML:
     def __init__(self, snapshot_infos):
         self.snapshot_infos = snapshot_infos
 
-        # todo: remove later
-        self.writer = jsonlines.open("../parser_output.jsonl", mode="w")
-
     @staticmethod
     def clean(sn):
         doc = Document(sn["raw_data"])
@@ -58,13 +55,12 @@ class CleanHTML:
     def save(self, x):
         # to elastic search
         # r = requests.post(f"{es_url}/{index}", data=json.dumps(x))
-
-        self.writer.write(x)
+        parser_db.create_publication(x)
 
     def run(self):
         current_time_str = datetime.now().strftime("%Y-%m-%dT%H:%M%S")
         logging.basicConfig(
-            filename=f"../.log/parser_{current_time_str}.log",
+            filename=f".log/parser_{current_time_str}.log",
             format="%(asctime)s - %(message)s",
             level=logging.INFO,
         )
@@ -83,8 +79,7 @@ class CleanHTML:
                     "canonical_url": one_snapshot_info["url"],
                     **parsed_content,
                 }
-                parser_db.create_publication(content_to_save)
-                # self.save(content_to_save)
+                self.save(content_to_save)
 
 
 if __name__ == "__main__":
