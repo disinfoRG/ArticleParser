@@ -51,7 +51,7 @@ def transformer(snapshots):
 
 
 def publication_saver(publication, parser_db):
-    parser_db.create_publication(publication)
+    parser_db.upsert_publication(publication)
 
 
 if __name__ == "__main__":
