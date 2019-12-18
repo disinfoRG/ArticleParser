@@ -32,6 +32,8 @@ def export_producers():
                         datetime_col: datetime.datetime.fromtimestamp(
                             producer[datetime_col]
                         ).isoformat()
+                        if producer[datetime_col]
+                        else None
                     }
                 )
             return producer
