@@ -60,7 +60,7 @@ if __name__ == "__main__":
     import pugsql
     import logging
 
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig(level=os.getenv("LOG_LEVEL", default="ERROR"))
 
     scrapper_db = pugsql.module("queries/scrapper")
     scrapper_db.connect(os.getenv("SCRAPPER_DB_URL"))
