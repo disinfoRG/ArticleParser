@@ -6,6 +6,9 @@ from bs4 import BeautifulSoup
 from readability import Document
 import json
 
+import logging
+import readability
+readability.readability.log.setLevel(logging.ERROR)
 
 def snapshots_getter(scrapper_db, offset=0, limit=1000):
     return scrapper_db.get_all_article_snapshots(offset=offset, limit=limit)
