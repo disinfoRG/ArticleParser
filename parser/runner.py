@@ -20,6 +20,6 @@ def run_parser(from_db, to_db, getter, saver, transformer, paginate_len=100):
         items = list(getter(from_db, offset=offset, limit=limit))
         if len(items) == 0:
             break
-        logging.debug(f"processing items {offset} to {offset + limit}")
+        logging.info(f"processing items {offset} to {offset + limit}")
         processor(items=items, to_db=to_db, transformer=transformer, saver=saver)
         offset += limit

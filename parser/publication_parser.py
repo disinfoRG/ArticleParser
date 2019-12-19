@@ -8,7 +8,9 @@ import json
 
 import logging
 import readability
+
 readability.readability.log.setLevel(logging.ERROR)
+
 
 def snapshots_getter(scrapper_db, offset=0, limit=1000):
     return scrapper_db.get_all_article_snapshots(offset=offset, limit=limit)
@@ -50,10 +52,12 @@ def transform_snapshot(sn):
 
 def transformer(snapshots):
     for snapshot in snapshots:
+        logging.debug(f"transform snapshot {snapshot['article_id']}")
         yield transform_snapshot(snapshot)
 
 
 def publication_saver(publication, parser_db):
+    logging.debug(f"save publication {publication['publication_id']}")
     parser_db.upsert_publication(publication)
 
 
