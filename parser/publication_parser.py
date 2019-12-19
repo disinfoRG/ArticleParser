@@ -35,7 +35,7 @@ def transform_snapshot(sn):
 
         # links
         external_links = [x["href"] for x in soup.find_all("a", href=lambda x: x)]
-        image_links = [x["data-src"] for x in soup.find_all("img")]
+        image_links = [x["data-src"] if "data-src" in x else x["src"] for x in soup.find_all("img")]
 
         return {
             "publication_id": sn["article_id"],
