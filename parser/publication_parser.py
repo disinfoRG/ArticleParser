@@ -41,10 +41,15 @@ def transform_snapshot(sn):
             "publication_id": sn["article_id"],
             "producer_id": sn["site_id"],
             "canonical_url": sn["url"],
+            "first_seen_at": sn["first_seen_at"],
+            "last_updated_at": sn["last_updated_at"],
             "title": title,
             "publication_text": text,
             "urls": json.dumps(external_links),
             "image_urls": json.dumps(image_links),
+            "hashtags": "[]",
+            "keywords": "[]",
+            "tags": "[]",
         }
     except Exception as e:
         logging.error(e)
