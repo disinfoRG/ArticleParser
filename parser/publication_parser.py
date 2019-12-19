@@ -56,9 +56,20 @@ def transformer(snapshots):
         yield transform_snapshot(snapshot)
 
 
-def publication_saver(publication, parser_db):
-    logging.debug(f"save publication {publication['publication_id']}")
-    parser_db.upsert_publication(publication)
+def saver():
+    save_log_period = 1000
+    save_count = 0
+
+    def publication_saver(publication, parser_db):
+        nonlocal save_count
+        nonlocal save_log_period
+        if save_count == save_log_period:
+            logging.info(f"save publication {publication['publication_id']}")
+            save_count = 0
+        parser_db.upsert_publication(publication)
+        save_count = save_count + 1
+
+    return publication_saver
 
 
 if __name__ == "__main__":
@@ -78,7 +89,7 @@ if __name__ == "__main__":
         from_db=scrapper_db,
         to_db=parser_db,
         getter=snapshots_getter,
-        saver=publication_saver,
+        saver=saver(),
         transformer=transformer,
         paginate_len=1000,
     )
