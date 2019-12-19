@@ -80,4 +80,5 @@ if __name__ == "__main__":
         getter=snapshots_getter,
         saver=publication_saver,
         transformer=transformer,
+        paginate_len=1000,
     )
