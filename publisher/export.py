@@ -121,11 +121,19 @@ def publications_dumper(publications):
 
 if __name__ == "__main__":
     import logging
-    import sys
+    import argparse
 
     logging.basicConfig(level=logging.DEBUG)
 
-    if len(sys.argv) == 1:
+    def parse_args():
+        parser = argparse.ArgumentParser(description="Export datasets from parser database")
+        parser.add_argument("command", help="one of: producers, publications", default=None)
+        parser.add_argument("-f", "--format", help="export format: json (jsonl), csv")
+        return parser.parse_args()
+
+    args = parse_args()
+
+    if not args.command:
         runner(
             from_db=queries,
             getter=producers_getter,
@@ -139,7 +147,7 @@ if __name__ == "__main__":
             transformer=transform_publications,
             saver=publications_saver,
         )
-    elif sys.argv[1] == "producers":
+    elif args.command == "producers":
         runner(
             from_db=queries,
             getter=producers_getter,
@@ -147,7 +155,7 @@ if __name__ == "__main__":
             saver=producers_dumper,
         )
 
-    elif sys.argv[1] == "publications":
+    elif args.command == "publications":
         runner(
             from_db=queries,
             getter=publications_getter,
@@ -155,4 +163,4 @@ if __name__ == "__main__":
             saver=publications_dumper,
         )
     else:
-        print(f"Unknown command '{sys.argv}'")
+        print(f"Unknown command '{args.command}'")
