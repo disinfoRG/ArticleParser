@@ -73,9 +73,12 @@ def transform_producers(rows):
         yield transform_producer(p)
 
 
-def producers_saver(producers):
-    with open(producers_filename, mode="w") as fp:
-        json.dump(producers, fp, ensure_ascii=False)
+def producers_saver(filename):
+    def saver(producers):
+        with open(filename, mode="w") as fp:
+            json.dump(producers, fp, ensure_ascii=False)
+
+    return saver
 
 
 def producers_dumper(producers):
@@ -109,9 +112,12 @@ def transform_publications(rows):
         yield transform_publication(p)
 
 
-def publications_saver(publications):
-    with jsonlines.open(publications_filename, mode="a") as writer:
-        writer.write_all(publications)
+def publications_saver(filename):
+    def saver(publications):
+        with jsonlines.open(filename, mode="a") as writer:
+            writer.write_all(publications)
+
+    return saver
 
 
 def publications_dumper(publications):
@@ -126,33 +132,33 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     def parse_args():
-        parser = argparse.ArgumentParser(description="Export datasets from parser database")
-        parser.add_argument("command", help="one of: producers, publications", default=None)
-        parser.add_argument("-f", "--format", help="export format: json (jsonl), csv")
+        parser = argparse.ArgumentParser(
+            description="Export datasets from parser database"
+        )
+        parser.add_argument(
+            "command",
+            choices=["producers", "publications"],
+            help="one of: producers, publications",
+        )
+        parser.add_argument(
+            "-f",
+            "--format",
+            choices=["csv", "json"],
+            help="export format: json (jsonl), csv",
+        )
+        parser.add_argument("-o", "--output", help="save to file")
         return parser.parse_args()
 
     args = parse_args()
 
-    if not args.command:
+    if args.command == "producers":
         runner(
             from_db=queries,
             getter=producers_getter,
             transformer=transform_producers,
-            saver=producers_saver,
-        )
-
-        runner(
-            from_db=queries,
-            getter=publications_getter,
-            transformer=transform_publications,
-            saver=publications_saver,
-        )
-    elif args.command == "producers":
-        runner(
-            from_db=queries,
-            getter=producers_getter,
-            transformer=transform_producers,
-            saver=producers_dumper,
+            saver=producers_dumper
+            if args.output is None
+            else producers_saver(filename=args.output),
         )
 
     elif args.command == "publications":
@@ -160,7 +166,9 @@ if __name__ == "__main__":
             from_db=queries,
             getter=publications_getter,
             transformer=transform_publications,
-            saver=publications_dumper,
+            saver=publications_dumper
+            if args.output is None
+            else publications_saver(filename=args.output),
         )
     else:
         print(f"Unknown command '{args.command}'")
