@@ -6,13 +6,12 @@ import os
 import pugsql
 import json
 import jsonlines
+import csv
+import sys
 import datetime
 
 queries = pugsql.module("queries/parser")
 queries.connect(os.getenv("DB_URL"))
-
-producers_filename = "producers.json"
-publications_filename = "publications.jsonl"
 
 
 def processor(items, saver, transformer):
@@ -51,7 +50,7 @@ def producers_getter(db, offset=0, limit=1000):
     return db.get_all_producers(offset=offset, limit=limit)
 
 
-def transform_producer(producer):
+def transform_producer_json(producer):
     rename_col(producer, "producer_id", "id")
     for json_col in ["languages", "licenses", "followership"]:
         producer.update({json_col: json.loads(producer[json_col])})
@@ -68,21 +67,70 @@ def transform_producer(producer):
     return producer
 
 
-def transform_producers(rows):
-    for p in rows:
-        yield transform_producer(p)
+def transform_producer_csv(producer):
+    producer = transform_producer_json(producer)
+    for list_col in ["languages", "licenses"]:
+        producer.update({list_col: ", ".join(producer[list_col])})
+    for dict_col in ["followership"]:
+        producer.update(
+            {
+                dict_col: ", ".join(
+                    [f"{key}: {value}" for key, value in producer[dict_col]]
+                )
+            }
+        )
+    return producer
 
 
-def producers_saver(filename):
+def transform_producers(format="json"):
+    def transformer(rows):
+        if format == "json":
+            for p in rows:
+                yield transform_producer_json(p)
+        elif format == "csv":
+            for p in rows:
+                yield transform_producer_csv(p)
+
+    return transformer
+
+
+def producers_saver(filename, format="json"):
     def saver(producers):
         with open(filename, mode="w") as fp:
-            json.dump(producers, fp, ensure_ascii=False)
+            if format == "json":
+                json.dump(producers, fp, ensure_ascii=False)
+            elif format == "csv":
+                producers_saver_csv(producers, fp)
 
     return saver
 
 
-def producers_dumper(producers):
-    print(json.dumps(producers, ensure_ascii=False))
+def producers_saver_csv(producers, fp):
+    fieldnames = [
+        "id",
+        "name",
+        "canonical_url",
+        "classification",
+        "languages",
+        "licenses",
+        "first_seen_at",
+        "last_updated_at",
+        "followership",
+    ]
+    writer = csv.DictWriter(fp, fieldnames=fieldnames)
+    writer.writeheader()
+    for p in producers:
+        writer.writerow(p)
+
+
+def producers_dumper(format="json"):
+    def dumper_csv(producers):
+        producers_saver_csv(producers, sys.stdout)
+
+    def dumper_json(producers):
+        print(json.dumps(producers, ensure_ascii=False))
+
+    return dumper_json if format == "json" else dumper_csv
 
 
 def publications_getter(db, offset=0, limit=1000):
@@ -107,22 +155,57 @@ def transform_publication(publication):
     return publication
 
 
-def transform_publications(rows):
-    for p in rows:
-        yield transform_publication(p)
+def transform_publications(format="json"):
+    def transformer(rows):
+        for p in rows:
+            yield transform_publication(p)
+
+    return transformer
 
 
-def publications_saver(filename):
+def publications_saver(filename, format="json"):
     def saver(publications):
-        with jsonlines.open(filename, mode="a") as writer:
-            writer.write_all(publications)
+        if format == "json":
+            with jsonlines.open(filename, mode="a") as writer:
+                writer.write_all(publications)
+        elif format == "csv":
+            publications_saver_csv(publications, fp)
 
     return saver
 
 
-def publications_dumper(publications):
+def publications_saver_csv(publications, fp):
+    fieldnames = [
+        "id",
+        "producer_id",
+        "canonical_url",
+        "title",
+        "text",
+        "language",
+        "license",
+        "posted_at",
+        "first_seen_at",
+        "last_updated_at",
+        "hashtags",
+        "urls",
+        "keywords",
+        "tags",
+    ]
+    writer = csv.DictWriter(fp, fieldnames=fieldnames)
+    writer.writeheader()
     for p in publications:
-        print(json.dumps(p, ensure_ascii=False))
+        writer.writerow(p)
+
+
+def publications_dumper(format="json"):
+    def dumper_csv(publications):
+        publications_saver_csv(publications, sys.stdout)
+
+    def dumper_json(publications):
+        for p in publications:
+            print(json.dumps(p, ensure_ascii=False))
+
+    return dumper_json if format == "json" else dumper_csv
 
 
 if __name__ == "__main__":
@@ -155,20 +238,20 @@ if __name__ == "__main__":
         runner(
             from_db=queries,
             getter=producers_getter,
-            transformer=transform_producers,
-            saver=producers_dumper
+            transformer=transform_producers(format=args.format),
+            saver=producers_dumper(format=args.format)
             if args.output is None
-            else producers_saver(filename=args.output),
+            else producers_saver(filename=args.output, format=args.format),
         )
 
     elif args.command == "publications":
         runner(
             from_db=queries,
             getter=publications_getter,
-            transformer=transform_publications,
-            saver=publications_dumper
+            transformer=transform_publications(format=args.format),
+            saver=publications_dumper(format=args.format)
             if args.output is None
-            else publications_saver(filename=args.output),
+            else publications_saver(filename=args.output, format=args.format),
         )
     else:
         print(f"Unknown command '{args.command}'")
