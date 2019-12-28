@@ -35,7 +35,7 @@ publication_fieldnames = [
     "text",
     "language",
     "license",
-    "posted_at",
+    "published_at",
     "first_seen_at",
     "last_updated_at",
     "hashtags",
@@ -100,11 +100,12 @@ def publications_getter(db, offset=0, limit=1000):
 def transform_publication(publication):
     publication["id"] = publication.pop("publication_id")
     publication["text"] = publication.pop("publication_text")
+    del publication["metadata"]
     for col in ["hashtags", "urls", "keywords", "tags"]:
         if publication[col] is not None:
             publication.update({col: json.loads(publication[col])})
-    for datetime_col in ["posted_at", "first_seen_at", "last_updated_at"]:
-        if publication[datetime_col] is not None:
+    for datetime_col in ["published_at", "first_seen_at", "last_updated_at"]:
+        if datetime_col in publication and publication[datetime_col] is not None:
             publication.update(
                 {
                     datetime_col: datetime.datetime.fromtimestamp(
