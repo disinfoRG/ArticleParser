@@ -127,7 +127,7 @@ if __name__ == "__main__":
     import logging
     import argparse
 
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=os.getenv("LOG_LEVEL", default="ERROR"))
 
     def parse_args():
         parser = argparse.ArgumentParser(
