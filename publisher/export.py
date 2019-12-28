@@ -81,12 +81,12 @@ def transform_producer_csv(producer):
     return producer
 
 
-def transform_producers(format="jsonl"):
+def transform_producers(fmt="jsonl"):
     def transformer(rows):
-        if format == "jsonl":
+        if fmt == "jsonl":
             for p in rows:
                 yield transform_producer_json(p)
-        elif format == "csv":
+        elif fmt == "csv":
             for p in rows:
                 yield transform_producer_csv(p)
 
@@ -115,7 +115,7 @@ def transform_publication(publication):
     return publication
 
 
-def transform_publications(format="jsonl"):
+def transform_publications(fmt="jsonl"):
     def transformer(rows):
         for p in rows:
             yield transform_publication(p)
@@ -150,7 +150,7 @@ if __name__ == "__main__":
         runner(
             from_db=queries,
             getter=producers_getter,
-            transformer=transform_producers(format=args.format),
+            transformer=transform_producers(fmt=args.format),
             writer=writer.fromformat(
                 args.format, filename=args.output, fieldnames=producer_fieldnames
             ),
@@ -160,7 +160,7 @@ if __name__ == "__main__":
         runner(
             from_db=queries,
             getter=publications_getter,
-            transformer=transform_publications(format=args.format),
+            transformer=transform_publications(fmt=args.format),
             writer=writer.fromformat(
                 args.format, filename=args.output, fieldnames=publication_fieldnames
             ),
