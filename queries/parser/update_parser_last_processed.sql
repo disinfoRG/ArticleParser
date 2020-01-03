@@ -1,4 +1,4 @@
--- :name update_last_processed
+-- :name update_parser_last_processed
 UPDATE parser_info
 SET info = JSON_SET(
   JSON_SET(info, "$.last_processed_article_id", :last_processed_article_id),
