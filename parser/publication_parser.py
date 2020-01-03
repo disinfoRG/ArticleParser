@@ -202,3 +202,13 @@ if __name__ == "__main__":
         paginate_len=10,
         limit=100
     )
+
+    parser_db.upsert_parser_info(
+        parser_name=name,
+        info=json.dumps(
+            {
+                "last_processed_at": int(datetime.datetime.now().timestamp()),
+                "parser": {"name": name, "version": version},
+            }
+        ),
+    )
