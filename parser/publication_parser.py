@@ -60,6 +60,7 @@ def transform_snapshot(sn):
                 and "content" in tag.attrs.keys()
             )
         }
+        meta = {**meta_property, **meta_name, **meta_itemprop}
 
         # json ld
         try:
@@ -92,7 +93,7 @@ def transform_snapshot(sn):
 
         def parse_published_at(jsonld):
             if "@type" in jsonld and (
-                jsonld["@type"] == "NewsArticle" or jsonld["@type"] == "Article"
+                jsonld["@type"] in ["NewsArticle", "Article", "BlogPosting", "WebPage"]
             ):
                 if "datePublished" in jsonld:
                     return datetime.datetime.fromisoformat(
@@ -112,6 +113,10 @@ def transform_snapshot(sn):
             published_at = parse_published_at(jsonld)
         elif "@graph" in jsonld:
             published_at = lookup_published_at(jsonld["@graph"])
+        elif "article:published_time" in meta:
+            published_at = datetime.datetime.fromisoformat(
+                meta["article:published_time"]
+            ).timestamp()
 
         return {
             "publication_id": sn["article_id"],
