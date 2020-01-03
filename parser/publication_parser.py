@@ -199,5 +199,6 @@ if __name__ == "__main__":
         getter=snapshots_getter,
         saver=saver(),
         transformer=transformer,
-        paginate_len=1000,
+        paginate_len=10,
+        limit=100
     )
