@@ -175,6 +175,11 @@ def saver():
                     }
                 ),
             )
+            parser_db.update_last_processed(
+                parser_name=name,
+                last_processed_article_id=article_snapshot["article_id"],
+                last_processed_snapshot_at=article_snapshot["snapshot_at"],
+            )
         save_count = save_count + 1
 
     return publication_saver
@@ -193,6 +198,8 @@ if __name__ == "__main__":
     parser_db = pugsql.module("queries/parser")
     parser_db.connect(os.getenv("DB_URL"))
 
+    parser_db.create_ignore_parser_info(parser_name=name, info="{}")
+
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
@@ -200,15 +207,5 @@ if __name__ == "__main__":
         saver=saver(),
         transformer=transformer,
         paginate_len=10,
-        limit=100
-    )
-
-    parser_db.upsert_parser_info(
-        parser_name=name,
-        info=json.dumps(
-            {
-                "last_processed_at": int(datetime.datetime.now().timestamp()),
-                "parser": {"name": name, "version": version},
-            }
-        ),
+        limit=100,
     )
