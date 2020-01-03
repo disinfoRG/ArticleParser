@@ -10,6 +10,9 @@ import logging
 import readability
 import datetime
 
+name = "publication_parser"
+version = "0.9.0"
+
 readability.readability.log.setLevel(logging.ERROR)
 
 
