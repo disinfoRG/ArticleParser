@@ -194,6 +194,11 @@ if __name__ == "__main__":
     import os
     import pugsql
     import logging
+    import argparse
+
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument("--limit", type=int, default=10000, help="limit of total number of article snapshots to parse")
+    args = argparser.parse_args()
 
     logging.basicConfig(level=os.getenv("LOG_LEVEL", default="ERROR"))
 
@@ -211,5 +216,5 @@ if __name__ == "__main__":
         saver=saver(),
         transformer=transformer,
         paginate_len=1000,
-        limit=10000,
+        limit=args.limit,
     )
