@@ -16,8 +16,11 @@ version = "0.9.0"
 readability.readability.log.setLevel(logging.ERROR)
 
 
-def snapshots_getter(scrapper_db, offset=0, limit=1000):
-    return scrapper_db.get_all_article_snapshots(offset=offset, limit=limit)
+def snapshots_getter(parser_db):
+    later_than = json.loads(parser_db.get_parser_info(parser_name=name)["info"])["last_processed_snapshot_at"]
+    def getter(scrapper_db, offset=0, limit=1000):
+        return scrapper_db.get_all_article_snapshots(offset=offset, limit=limit, later_than=later_than)
+    return getter
 
 
 def transform_snapshot(sn):
@@ -203,7 +206,7 @@ if __name__ == "__main__":
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
-        getter=snapshots_getter,
+        getter=snapshots_getter(parser_db),
         saver=saver(),
         transformer=transformer,
         paginate_len=10,
