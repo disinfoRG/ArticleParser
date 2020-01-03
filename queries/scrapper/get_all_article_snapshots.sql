@@ -6,5 +6,7 @@ SELECT
   Article.last_snapshot_at AS last_updated_at
 FROM ArticleSnapshot
 JOIN Article ON ArticleSnapshot.article_id = Article.article_id
+WHERE ArticleSnapshot.snapshot_at > :later_than
+ORDER BY ArticleSnapshot.snapshot_at ASC
 LIMIT :limit
 OFFSET :offset
