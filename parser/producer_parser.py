@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import json
+import datetime
 
 name = "producer_parser"
 version = "1.0.0"
@@ -29,8 +30,19 @@ def sites_getter(scrapper_db, offset=0, limit=1000):
     return scrapper_db.get_all_sites(offset=offset, limit=limit)
 
 
-def producer_saver(producer, to_db):
-    return to_db.upsert_producer(producer)
+def producer_saver(producer, site, to_db):
+    with to_db.transaction():
+        producer_id = to_db.upsert_producer(producer)
+        to_db.upsert_producer_mapping(
+            site_id=site["site_id"],
+            producer_id=producer_id,
+            info=json.dumps(
+                {
+                    "last_processed_at": int(datetime.datetime.now().timestamp()),
+                    "parser": {"name": name, "version": version},
+                }
+            ),
+        )
 
 
 if __name__ == "__main__":

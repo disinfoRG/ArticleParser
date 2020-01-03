@@ -7,9 +7,9 @@ def processor(items, to_db, saver, transformer):
     except Exception as e:
         logging.error(e)
     else:
-        for item in transformed:
+        for (item, original) in zip(transformed, items):
             try:
-                saver(item, to_db)
+                saver(item, original, to_db)
             except Exception as e:
                 logging.error(e)
 

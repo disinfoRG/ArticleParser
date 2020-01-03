@@ -4,11 +4,11 @@ load_dotenv()
 
 from bs4 import BeautifulSoup
 from readability import Document
+import datetime
 import json
 
 import logging
 import readability
-import datetime
 
 name = "publication_parser"
 version = "0.9.0"
@@ -156,13 +156,25 @@ def saver():
     save_log_period = 1000
     save_count = 0
 
-    def publication_saver(publication, parser_db):
+    def publication_saver(publication, article_snapshot, parser_db):
         nonlocal save_count
         nonlocal save_log_period
         if save_count == save_log_period:
             logging.info(f"save publication {publication['publication_id']}")
             save_count = 0
-        parser_db.upsert_publication(publication)
+        with parser_db.transaction():
+            publication_id = parser_db.upsert_publication(publication)
+            parser_db.upsert_publication_mapping(
+                article_id=article_snapshot["article_id"],
+                snapshot_at=article_snapshot["snapshot_at"],
+                publication_id=publication_id,
+                info=json.dumps(
+                    {
+                        "last_processed_at": int(datetime.datetime.now().timestamp()),
+                        "parser": {"name": name, "version": version},
+                    }
+                ),
+            )
         save_count = save_count + 1
 
     return publication_saver
