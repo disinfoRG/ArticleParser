@@ -4,6 +4,9 @@ load_dotenv()
 
 import json
 
+name = "producer_parser"
+version = "1.0.0"
+
 
 def transform_site(site):
     return {
