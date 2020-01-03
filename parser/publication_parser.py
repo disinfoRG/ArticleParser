@@ -17,7 +17,8 @@ readability.readability.log.setLevel(logging.ERROR)
 
 
 def snapshots_getter(parser_db):
-    later_than = json.loads(parser_db.get_parser_info(parser_name=name)["info"])["last_processed_snapshot_at"]
+    info = json.loads(parser_db.get_parser_info(parser_name=name)["info"])
+    later_than = info["last_processed_snapshot_at"] if "last_processed_snapshot_at" in info else 0
     def getter(scrapper_db, offset=0, limit=1000):
         return scrapper_db.get_all_article_snapshots(offset=offset, limit=limit, later_than=later_than)
     return getter
