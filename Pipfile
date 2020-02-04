@@ -13,7 +13,6 @@ pymysql = "*"
 alembic = "*"
 pugsql = "*"
 python-dotenv = "*"
-lxml = "==4.4.1"
 htmldate = "*"
 readability-lxml = {git = "https://github.com/pm5/python-readability.git"}
 beautifulsoup4 = "*"
