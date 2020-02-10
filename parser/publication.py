@@ -176,6 +176,7 @@ def transform_snapshot(sn):
                     "ga-id": ga_id,
                 }
             ),
+            "comments": json.dumps([]),
         }
     except Exception as e:
         logging.error(e)
@@ -192,8 +193,10 @@ def saver(dump=False):
     save_count = 0
 
     if dump:
+
         def json_dumper(pub, orig, db):
-            json.dump({ "publication": pub, "original": orig }, sys.stdout)
+            json.dump({"publication": pub, "original": orig}, sys.stdout)
+
         return json_dumper
 
     def publication_saver(publication, article_snapshot, parser_db):
