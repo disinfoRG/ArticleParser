@@ -16,11 +16,37 @@ version = "0.9.0"
 readability.readability.log.setLevel(logging.ERROR)
 
 
+def snapshots_getter_by_article_id(parser_db, article_id):
+    def getter(scrapper_db, offset=0, limit=1000):
+        return scrapper_db.get_article_snapshots_by_article_id(
+            offset=offset, limit=limit, article_id=article_id
+        )
+
+    return getter
+
+
+def snapshots_getter_by_url(parser_db, url):
+    def getter(scrapper_db, offset=0, limit=1000):
+        return scrapper_db.get_article_snapshots_by_url(
+            offset=offset, limit=limit, url=url
+        )
+
+    return getter
+
+
 def snapshots_getter(parser_db):
     info = json.loads(parser_db.get_parser_info(parser_name=name)["info"])
-    later_than = info["last_processed_snapshot_at"] if "last_processed_snapshot_at" in info else 0
+    later_than = (
+        info["last_processed_snapshot_at"]
+        if "last_processed_snapshot_at" in info
+        else 0
+    )
+
     def getter(scrapper_db, offset=0, limit=1000):
-        return scrapper_db.get_all_article_snapshots(offset=offset, limit=limit, later_than=later_than)
+        return scrapper_db.get_all_article_snapshots(
+            offset=offset, limit=limit, later_than=later_than
+        )
+
     return getter
 
 
@@ -189,32 +215,5 @@ def saver():
     return publication_saver
 
 
-if __name__ == "__main__":
-    from runner import run_parser
-    import os
-    import pugsql
-    import logging
-    import argparse
-
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument("--limit", type=int, default=10000, help="limit of total number of article snapshots to parse")
-    args = argparser.parse_args()
-
-    logging.basicConfig(level=os.getenv("LOG_LEVEL", default="ERROR"))
-
-    scrapper_db = pugsql.module("queries/scrapper")
-    scrapper_db.connect(os.getenv("SCRAPPER_DB_URL"))
-    parser_db = pugsql.module("queries/parser")
-    parser_db.connect(os.getenv("DB_URL"))
-
-    parser_db.insert_ignore_parser_info(parser_name=name, info="{}")
-
-    run_parser(
-        from_db=scrapper_db,
-        to_db=parser_db,
-        getter=snapshots_getter(parser_db),
-        saver=saver(),
-        transformer=transformer,
-        paginate_len=1000,
-        limit=args.limit,
-    )
+def update_parser_info(db):
+    db.insert_ignore_parser_info(parser_name=name, info="{}")

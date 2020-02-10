@@ -26,11 +26,21 @@ def transformer(sites):
         yield transform_site(site)
 
 
-def sites_getter(scrapper_db, offset=0, limit=1000):
+def all_sites_getter(scrapper_db, offset=0, limit=1000):
     return scrapper_db.get_all_sites(offset=offset, limit=limit)
 
 
-def producer_saver(producer, site, to_db):
+def site_getter(site_id):
+    def getter(scrapper_db, offset=0, limit=1):
+        if offset == 0 and limit > 1:
+            return [scrapper_db.get_site_by_id(site_id=site_id)]
+        else:
+            return []
+
+    return getter
+
+
+def saver(producer, site, to_db):
     with to_db.transaction():
         producer_id = to_db.upsert_producer(producer)
         to_db.upsert_producer_mapping(
@@ -43,25 +53,3 @@ def producer_saver(producer, site, to_db):
                 }
             ),
         )
-
-
-if __name__ == "__main__":
-    from runner import run_parser
-    import os
-    import pugsql
-    import logging
-
-    logging.basicConfig(level=logging.ERROR)
-
-    scrapper_db = pugsql.module("queries/scrapper")
-    scrapper_db.connect(os.getenv("SCRAPPER_DB_URL"))
-    parser_db = pugsql.module("queries/parser")
-    parser_db.connect(os.getenv("DB_URL"))
-
-    run_parser(
-        from_db=scrapper_db,
-        to_db=parser_db,
-        getter=sites_getter,
-        saver=producer_saver,
-        transformer=transformer,
-    )
