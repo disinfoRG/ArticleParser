@@ -12,3 +12,6 @@ def comments(soup):
 
 def published_at(soup):
     pass
+
+def transform_snapshot(soup):
+    pass
