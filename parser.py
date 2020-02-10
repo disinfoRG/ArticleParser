@@ -13,7 +13,7 @@ def parse_all_sites(scrapper_db, parser_db):
         from_db=scrapper_db,
         to_db=parser_db,
         getter=producer.all_sites_getter,
-        saver=producer.saver,
+        saver=producer.saver(),
         transformer=producer.transformer,
     )
 
@@ -23,7 +23,7 @@ def parse_site(scrapper_db, parser_db, site_id):
         from_db=scrapper_db,
         to_db=parser_db,
         getter=producer.site_getter(site_id),
-        saver=producer.saver,
+        saver=producer.saver(),
         transformer=producer.transformer,
     )
 
@@ -120,6 +120,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--limit", type=int, default=10000, help="limit number of entries to parse"
     )
+    parser.add_argument("--dump", action="store_true", help="dump data in STDOUT in JSON instead of writing to db")
 
     args = parser.parse_args()
     main(args)

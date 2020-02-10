@@ -40,16 +40,18 @@ def site_getter(site_id):
     return getter
 
 
-def saver(producer, site, to_db):
-    with to_db.transaction():
-        producer_id = to_db.upsert_producer(producer)
-        to_db.upsert_producer_mapping(
-            site_id=site["site_id"],
-            producer_id=producer_id,
-            info=json.dumps(
-                {
-                    "last_processed_at": int(datetime.datetime.now().timestamp()),
-                    "parser": {"name": name, "version": version},
-                }
-            ),
-        )
+def saver():
+    def save_to_db(producer, site, to_db):
+        with to_db.transaction():
+            producer_id = to_db.upsert_producer(producer)
+            to_db.upsert_producer_mapping(
+                site_id=site["site_id"],
+                producer_id=producer_id,
+                info=json.dumps(
+                    {
+                        "last_processed_at": int(datetime.datetime.now().timestamp()),
+                        "parser": {"name": name, "version": version},
+                    }
+                ),
+            )
+    return save_to_db
