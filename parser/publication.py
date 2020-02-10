@@ -11,6 +11,7 @@ import sys
 import logging
 import readability
 from parser.gatrack import parse_ga_id
+import parser.ptt
 
 name = "publication_parser"
 version = "0.9.0"
@@ -158,10 +159,10 @@ def parse_soups(sn):
 
 
 def transform_snapshot(sn):
-    if sn["article_type"] == "PTT":
-        return {}
+    soups = parse_soups(sn)
+    if soups["snapshot"]["article_type"] == "PTT":
+        return parser.ptt.parse_publication(soups)
     else:
-        soups = parse_soups(sn)
         ga_id = parse_ga_id(soups)
         title = parse_title(soups)
         text = parse_text(soups)
