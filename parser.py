@@ -8,57 +8,57 @@ import parser.producer as producer
 import parser.publication as publication
 
 
-def parse_all_sites(scrapper_db, parser_db):
+def parse_all_sites(scrapper_db, parser_db, dump=False):
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
         getter=producer.all_sites_getter,
-        saver=producer.saver(),
+        saver=producer.saver(dump),
         transformer=producer.transformer,
     )
 
 
-def parse_site(scrapper_db, parser_db, site_id):
+def parse_site(scrapper_db, parser_db, site_id, dump=False):
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
         getter=producer.site_getter(site_id),
-        saver=producer.saver(),
+        saver=producer.saver(dump),
         transformer=producer.transformer,
     )
 
 
-def parse_article(scrapper_db, parser_db, article_id):
+def parse_article(scrapper_db, parser_db, article_id, dump=False):
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
         getter=publication.snapshots_getter_by_article_id(parser_db, article_id),
-        saver=publication.saver(),
+        saver=publication.saver(dump),
         transformer=publication.transformer,
         paginate_len=1000,
         limit=100,
     )
 
 
-def parse_all_articles(scrapper_db, parser_db, limit):
+def parse_all_articles(scrapper_db, parser_db, limit, dump=False):
     publication.update_parser_info(parser_db)
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
         getter=publication.snapshots_getter(parser_db),
-        saver=publication.saver(),
+        saver=publication.saver(dump),
         transformer=publication.transformer,
         paginate_len=1000,
         limit=limit,
     )
 
 
-def parse_article_by_url(scrapper_db, parser_db, url):
+def parse_article_by_url(scrapper_db, parser_db, url, dump=False):
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
         getter=publication.snapshots_getter_by_url(parser_db, url),
-        saver=publication.saver(),
+        saver=publication.saver(dump),
         transformer=publication.transformer,
         paginate_len=1000,
         limit=100,
@@ -73,20 +73,20 @@ def main(args):
 
     if args.command == "producer":
         if args.id is not None:
-            parse_site(scrapper_db, parser_db, args.id)
+            parse_site(scrapper_db, parser_db, args.id, dump=args.dump)
         elif args.site_id is not None:
-            parse_site(scrapper_db, parser_db, args.site_id)
+            parse_site(scrapper_db, parser_db, args.site_id, dump=args.dump)
         else:
-            parse_all_sites(scrapper_db, parser_db)
+            parse_all_sites(scrapper_db, parser_db, dump=args.dump)
     elif args.command == "publication":
         if args.id is not None:
-            parse_article(scrapper_db, parser_db, args.id)
+            parse_article(scrapper_db, parser_db, args.id, dump=args.dump)
         elif args.article_id is not None:
-            parse_article(scrapper_db, parser_db, args.article_id)
+            parse_article(scrapper_db, parser_db, args.article_id, dump=args.dump)
         elif args.url is not None:
-            parse_article_by_url(scrapper_db, parser_db, args.url)
+            parse_article_by_url(scrapper_db, parser_db, args.url, dump=args.dump)
         else:
-            parse_all_articles(scrapper_db, parser_db, args.limit)
+            parse_all_articles(scrapper_db, parser_db, args.limit, dump=args.dump)
     else:
         raise Exception(f"Unknown command {args.command}")
 

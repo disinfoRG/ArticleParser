@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import sys
 import json
 import datetime
 
@@ -40,7 +41,14 @@ def site_getter(site_id):
     return getter
 
 
-def saver():
+def saver(dump=False):
+    if dump:
+
+        def json_dumper(prod, orig, db):
+            json.dump({"producer": prod, "original": orig}, sys.stdout)
+
+        return json_dumper
+
     def save_to_db(producer, site, to_db):
         with to_db.transaction():
             producer_id = to_db.upsert_producer(producer)
@@ -54,4 +62,5 @@ def saver():
                     }
                 ),
             )
+
     return save_to_db

@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from readability import Document
 import datetime
 import json
+import sys
 
 import logging
 import readability
@@ -182,9 +183,14 @@ def transformer(snapshots):
         yield transform_snapshot(snapshot)
 
 
-def saver():
+def saver(dump=False):
     save_log_period = 1000
     save_count = 0
+
+    if dump:
+        def json_dumper(pub, orig, db):
+            json.dump({ "publication": pub, "original": orig }, sys.stdout)
+        return json_dumper
 
     def publication_saver(publication, article_snapshot, parser_db):
         nonlocal save_count
