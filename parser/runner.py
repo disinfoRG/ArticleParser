@@ -1,13 +1,13 @@
 import logging
 
 
-def processor(items, to_db, saver, transformer):
+def process_each(incoming, to_db, saver, transformer):
     try:
-        transformed = transformer(items)
+        transformed = transformer(incoming)
     except Exception as e:
         logging.error(e)
     else:
-        for (item, original) in zip(transformed, items):
+        for (item, original) in zip(transformed, incoming):
             try:
                 saver(item, original, to_db)
             except Exception as e:
@@ -24,7 +24,7 @@ def run_parser(
         if len(items) == 0:
             break
         logging.info(f"processing items {offset} to {offset + page_limit}")
-        processor(items=items, to_db=to_db, transformer=transformer, saver=saver)
+        process_each(incoming=items, to_db=to_db, transformer=transformer, saver=saver)
         offset += page_limit
         if offset >= limit:
             break
