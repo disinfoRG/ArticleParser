@@ -10,6 +10,7 @@ import sys
 
 import logging
 import readability
+from parser.gatrack import parse_ga_id
 
 name = "publication_parser"
 version = "0.9.0"
@@ -104,6 +105,8 @@ def transform_snapshot(sn):
         except AttributeError:
             jsonld = {}
 
+        ga_id = parse_ga_id(soup)
+
         # content
         doc = Document(sn["raw_data"])
         # title
@@ -170,6 +173,7 @@ def transform_snapshot(sn):
                 {
                     "meta": {**meta_itemprop, **meta_property, **meta_name},
                     "json-ld": jsonld,
+                    "ga-id": ga_id,
                 }
             ),
         }
