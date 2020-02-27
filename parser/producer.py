@@ -5,9 +5,9 @@ load_dotenv()
 import sys
 import json
 import datetime
+from . import version
 
-name = "producer_parser"
-version = "1.0.0"
+name = "parser.producer"
 
 
 def transform_site(site):

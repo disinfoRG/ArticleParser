@@ -7,7 +7,7 @@ SELECT
   Article.article_type AS article_type
 FROM ArticleSnapshot
 JOIN Article ON ArticleSnapshot.article_id = Article.article_id
-WHERE Article.article_id = :article_id
+WHERE Article.article_id IN :article_ids
 ORDER BY ArticleSnapshot.snapshot_at ASC
 LIMIT :limit
 OFFSET :offset

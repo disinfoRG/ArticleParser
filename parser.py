@@ -3,6 +3,7 @@
 import argparse
 import logging
 from parser.runner import run_parser
+from parser import version
 import parser.db as db
 import parser.producer as producer
 import parser.publication as publication
@@ -52,6 +53,17 @@ def parse_all_articles(scrapper_db, parser_db, limit, dump=False):
         limit=limit,
     )
 
+def parse_all_old_articles(scrapper_db, parser_db, limit, dump=False):
+    run_parser(
+        from_db=scrapper_db,
+        to_db=parser_db,
+        getter=publication.snapshots_getter_by_parser_version(parser_db, version=version),
+        saver=publication.saver(dump),
+        transformer=publication.transformer,
+        paginate_len=1000,
+        limit=limit,
+    )
+
 
 def parse_article_by_url(scrapper_db, parser_db, url, dump=False):
     run_parser(
@@ -85,6 +97,8 @@ def main(args):
             parse_article(scrapper_db, parser_db, args.article_id, dump=args.dump)
         elif args.url is not None:
             parse_article_by_url(scrapper_db, parser_db, args.url, dump=args.dump)
+        elif args.update:
+            parse_all_old_articles(scrapper_db, parser_db, args.limit, dump=args.dump)
         else:
             parse_all_articles(scrapper_db, parser_db, args.limit, dump=args.dump)
     else:

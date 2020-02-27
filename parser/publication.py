@@ -12,9 +12,9 @@ import logging
 import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
+from . import version
 
-name = "publication_parser"
-version = "0.9.0"
+name = "parser.publication"
 
 readability.readability.log.setLevel(logging.ERROR)
 
@@ -22,7 +22,7 @@ readability.readability.log.setLevel(logging.ERROR)
 def snapshots_getter_by_article_id(parser_db, article_id):
     def getter(scrapper_db, offset=0, limit=1000):
         return scrapper_db.get_article_snapshots_by_article_id(
-            offset=offset, limit=limit, article_id=article_id
+            offset=offset, limit=limit, article_ids=[article_id]
         )
 
     return getter
@@ -48,6 +48,20 @@ def snapshots_getter(parser_db):
     def getter(scrapper_db, offset=0, limit=1000):
         return scrapper_db.get_all_article_snapshots(
             offset=offset, limit=limit, later_than=later_than
+        )
+
+    return getter
+
+
+def snapshots_getter_by_parser_version(parser_db, version):
+    pubs = parser_db.get_publications_by_parser_version(
+        version=version, offset=0, limit=1000
+    )
+    ids = list(set([p["article_id"] for p in pubs]))
+
+    def getter(scrapper_db, offset=0, limit=1000):
+        return scrapper_db.get_article_snapshots_by_article_id(
+            offset=offset, limit=limit, article_ids=ids
         )
 
     return getter
