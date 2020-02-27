@@ -60,16 +60,23 @@ def publications_getter(published_at_range=None):
     return getter
 
 
-def day_range(days, start=None, until=None):
-    day = start if start is not None else datetime.datetime(2019, 1, 1, 0, 0, 0)
-    step = datetime.timedelta(days=1)
+def day_range(start=None, days=None, until=None):
+    if start is None:
+        start = datetime.datetime(2018, 1, 1, 0, 0, 0)
     if until is None:
         until = datetime.datetime.now()
-    for _ in range(days):
-        yield day
-        day = day + step
-        if day > until:
-            break
+    day = start
+    step = datetime.timedelta(days=1)
+    if days is None:
+        while day <= until:
+            yield day
+            day = day + step
+    else:
+        for _ in range(days):
+            yield day
+            day = day + step
+            if day > until:
+                break
 
 
 if __name__ == "__main__":
@@ -129,7 +136,7 @@ if __name__ == "__main__":
             )
         elif args.group_by == "published_day":
             outdir = pathlib.Path(args.output)
-            for day in day_range(365 * 2):
+            for day in day_range():
                 start = day.timestamp()
                 end = start + 86400
                 runner(
