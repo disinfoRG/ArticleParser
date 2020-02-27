@@ -112,7 +112,6 @@ if __name__ == "__main__":
     )
     pub_cmd.add_argument("--url", help="url the article to parse in news db", nargs="?")
 
-    parser.add_argument("--parser-version", help="force parser version")
     parser.add_argument(
         "--update", action="store_true", help="updates all results of old parsers"
     )
