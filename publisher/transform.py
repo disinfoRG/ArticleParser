@@ -46,9 +46,11 @@ def producers(fmt="jsonl"):
     return transformer
 
 
-def transform_publication(publication):
+def transform_publication(publication, full_text=False):
     publication["id"] = publication.pop("publication_id")
     publication["text"] = publication.pop("publication_text")
+    if not full_text:
+        publication["text"] = publication["text"][:280]
     del publication["metadata"]
     for col in ["hashtags", "urls", "keywords", "tags"]:
         if publication[col] is not None:
@@ -65,9 +67,9 @@ def transform_publication(publication):
     return publication
 
 
-def publications(fmt="jsonl"):
+def publications(fmt="jsonl", full_text=False):
     def transformer(rows):
         for p in rows:
-            yield transform_publication(p)
+            yield transform_publication(p, full_text=full_text)
 
     return transformer
