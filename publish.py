@@ -3,12 +3,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import datetime
 import pathlib
 import pugsql
-from runner import runner
-import writer
-import transform
-import datetime
+from publisher.runner import runner
+from publisher import writer
+from publisher import transform
 
 queries = pugsql.module("queries/parser")
 queries.connect(os.getenv("DB_URL"))
