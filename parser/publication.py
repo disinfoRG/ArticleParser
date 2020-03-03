@@ -7,6 +7,7 @@ from readability import Document
 import datetime
 import json
 import sys
+import dateparser
 
 import logging
 import readability
@@ -131,9 +132,7 @@ def parse_published_at(soups):
             jsonld["@type"] in ["NewsArticle", "Article", "BlogPosting", "WebPage"]
         ):
             if "datePublished" in jsonld:
-                return datetime.datetime.fromisoformat(
-                    jsonld["datePublished"]
-                ).timestamp()
+                return dateparser.parse(jsonld["datePublished"]).timestamp()
         return None
 
     def lookup_published_at(items):
@@ -149,9 +148,7 @@ def parse_published_at(soups):
     elif "@graph" in jsonld:
         published_at = lookup_published_at(jsonld["@graph"])
     elif "article:published_time" in meta:
-        published_at = datetime.datetime.fromisoformat(
-            meta["article:published_time"]
-        ).timestamp()
+        published_at = dateparser.parse(meta["article:published_time"]).timestamp()
 
     return published_at
 
