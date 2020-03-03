@@ -5,7 +5,7 @@
 
 We use MySQL.  To setup database connections:
 
-1. Copy `.env.default` to `.env`, and set `DB_URL` value.  Start the MySQl connection string with `mysql+pymysql://` so that sqlalchemy uses the correct driver.
+1. Copy `.env.default` to `.env`, and set `DB_URL`, `SCRAPER_DB_URL` values.  Start the MySQl connection string with `mysql+pymysql://` so that sqlalchemy uses the correct driver.
 
 We use Python 3.7.  Install Python dependencies and run database migrations:
 
@@ -21,12 +21,19 @@ $ alembic upgrade head
 Then
 
 ```sh
-$ python parser/producer_parser.py
-$ python parser/publication_parser.py
-$ python publisher/export.py
+$ python ./parser.py producer
+$ python ./parser.py --limit 1000 publication
 ```
 
-This is currently a one-shot process: there is no tracking of entity IDs and you have to truncate the parser database every time before you run it.
+You can run these commands multiple times to parse source data in batch.  `--limit <number>` sets the number of entries to parse for each batch.
+
+You can now export the parsed data with
+
+```sh
+$ mkdir -p datasets/publications
+$ python ./publish.py -f jsonl -o datasets/producers.jsonl producers
+$ python ./publish.py -f jsonl -g published_day -o datasets/publications publications
+```
 
 ## Development
 
