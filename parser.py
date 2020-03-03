@@ -129,7 +129,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--update", action="store_true", help="updates all results of old parsers"
     )
-    parser.add_argument("--limit-sec", type=int, help="limit run time in seconds")
+    # XXX not implemented
+    # parser.add_argument("--limit-sec", type=int, help="limit run time in seconds")
     parser.add_argument(
         "--limit", type=int, default=10000, help="limit number of entries to parse"
     )
