@@ -249,7 +249,7 @@
         },
         "readability-lxml": {
             "git": "https://github.com/pm5/python-readability.git",
-            "ref": "8e1f4ceb6af9dc7794ec7169fae8923565f73998"
+            "ref": "188f01ce820c8d1974261bbef57cb858b2299486"
         },
         "regex": {
             "hashes": [
