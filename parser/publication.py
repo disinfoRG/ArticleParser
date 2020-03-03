@@ -8,6 +8,7 @@ import datetime
 import json
 import sys
 import dateparser
+import extruct
 
 import logging
 import readability
@@ -96,11 +97,8 @@ def parse_meta_tags(body):
     return {**meta_property, **meta_name, **meta_itemprop}
 
 
-def parse_jsonld(body):
-    try:
-        return json.loads(body.find("script", {"type": "application/ld+json"}).text)
-    except AttributeError:
-        return {}
+def parse_metadata(body):
+    return extruct.extract(str(body))
 
 
 def parse_external_links(soups):
@@ -124,7 +122,7 @@ def parse_title(soups):
 
 def parse_published_at(soups):
     published_at = None
-    jsonld = soups["json-ld"]
+    jsonld = soups["metadata"]["json-ld"]
     meta = soups["meta-tags"]
 
     def parse_published_at(jsonld):
@@ -158,13 +156,14 @@ def parse_soups(sn):
     body = BeautifulSoup(sn["raw_data"], "html.parser")
     summary = BeautifulSoup(doc.summary(), "html.parser")
     metatags = parse_meta_tags(body)
-    jsonld = parse_jsonld(body)
+    metadata = parse_metadata(body)
+    jsonld = {}
     return {
         "doc": doc,
         "body": body,
         "summary": summary,
         "meta-tags": metatags,
-        "json-ld": jsonld,
+        "metadata": metadata,
         "snapshot": sn,
     }
 
@@ -196,7 +195,7 @@ def transform_snapshot(sn):
             "tags": [],
             "metadata": {
                 "meta-tags": soups["meta-tags"],
-                "json-ld": soups["json-ld"],
+                **soups["metadata"],
                 "ga-id": ga_id,
             },
             "comments": [],

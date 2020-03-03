@@ -71,7 +71,7 @@ def parse_publication(soups):
         "tags": [],
         "metadata": {
             "meta-tags": soups["meta-tags"],
-            "json-ld": soups["json-ld"],
+            **soups["metadata"],
             "ga-id": ga_id,
         },
         "comments": comments,
