@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import sys
+import pathlib
+import subprocess
 import argparse
 import logging
 from parser.runner import run_parser
@@ -104,8 +107,21 @@ def main(args):
     else:
         raise Exception(f"Unknown command {args.command}")
 
+def try_subcommands(skip_commands=[]):
+    """
+    Try passing subcommand `cmd` to `parse-cmd`.
+    """
+    if len(sys.argv) > 1 and sys.argv not in skip_commands:
+        binname = pathlib.Path(__file__)
+        sub_cmd = binname.parent.resolve() / f"{binname.stem}-{sys.argv[1]}{binname.suffix}"
+        try:
+            sys.exit(subprocess.run([sub_cmd, *sys.argv[2:]]).returncode)
+        except FileNotFoundError:
+            pass
 
 if __name__ == "__main__":
+    try_subcommands(skip_commands=["producer", "publication"])
+
     parser = argparse.ArgumentParser()
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
 
