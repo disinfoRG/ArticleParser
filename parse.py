@@ -56,11 +56,14 @@ def parse_all_articles(scrapper_db, parser_db, limit, dump=False):
         limit=limit,
     )
 
+
 def parse_all_old_articles(scrapper_db, parser_db, limit, dump=False):
     run_parser(
         from_db=scrapper_db,
         to_db=parser_db,
-        getter=publication.snapshots_getter_by_parser_version(parser_db, version=version),
+        getter=publication.snapshots_getter_by_parser_version(
+            parser_db, version=version
+        ),
         saver=publication.saver(dump),
         transformer=publication.transformer,
         paginate_len=1000,
@@ -107,17 +110,21 @@ def main(args):
     else:
         raise Exception(f"Unknown command {args.command}")
 
+
 def try_subcommands(skip_commands=[]):
     """
     Try passing subcommand `cmd` to `parse-cmd`.
     """
     if len(sys.argv) > 1 and sys.argv not in skip_commands:
         binname = pathlib.Path(__file__)
-        sub_cmd = binname.parent.resolve() / f"{binname.stem}-{sys.argv[1]}{binname.suffix}"
+        sub_cmd = (
+            binname.parent.resolve() / f"{binname.stem}-{sys.argv[1]}{binname.suffix}"
+        )
         try:
             sys.exit(subprocess.run([sub_cmd, *sys.argv[2:]]).returncode)
         except FileNotFoundError:
             pass
+
 
 if __name__ == "__main__":
     try_subcommands(skip_commands=["producer", "publication"])
@@ -150,7 +157,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--limit", type=int, default=10000, help="limit number of entries to parse"
     )
-    parser.add_argument("--dump", action="store_true", help="dump data in STDOUT in JSON instead of writing to db")
+    parser.add_argument(
+        "--dump",
+        action="store_true",
+        help="dump data in STDOUT in JSON instead of writing to db",
+    )
 
     args = parser.parse_args()
     main(args)
