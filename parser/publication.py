@@ -130,7 +130,8 @@ def parse_published_at(soups):
             jsonld["@type"] in ["NewsArticle", "Article", "BlogPosting", "WebPage"]
         ):
             if "datePublished" in jsonld:
-                return dateparser.parse(jsonld["datePublished"]).timestamp()
+                d = dateparser.parse(jsonld["datePublished"])
+                return d.timestamp() if d is not None else None
         return None
 
     def lookup_published_at(items):
@@ -146,7 +147,8 @@ def parse_published_at(soups):
     elif "@graph" in jsonld:
         published_at = lookup_published_at(jsonld["@graph"])
     elif "article:published_time" in meta:
-        published_at = dateparser.parse(meta["article:published_time"]).timestamp()
+        d = dateparser.parse(meta["article:published_time"])
+        published_at = d.timestamp() if d is not None else None
 
     return published_at
 

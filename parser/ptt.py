@@ -14,7 +14,10 @@ def parse_image_links(soups):
 
 
 def parse_datetime(text):
-    return datetime.datetime.strptime(text, "%a %b %d %H:%M:%S %Y").timestamp()
+    try:
+        return datetime.datetime.strptime(text, "%a %b %d %H:%M:%S %Y").timestamp()
+    except:
+        return None
 
 
 def parse_publication(soups):
