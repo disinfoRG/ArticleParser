@@ -7,14 +7,16 @@ from readability import Document
 import datetime
 import json
 import sys
+import dateparser
+import extruct
 
 import logging
 import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
+from . import version
 
-name = "publication_parser"
-version = "0.9.0"
+name = "parser.publication"
 
 readability.readability.log.setLevel(logging.ERROR)
 
@@ -22,7 +24,7 @@ readability.readability.log.setLevel(logging.ERROR)
 def snapshots_getter_by_article_id(parser_db, article_id):
     def getter(scrapper_db, offset=0, limit=1000):
         return scrapper_db.get_article_snapshots_by_article_id(
-            offset=offset, limit=limit, article_id=article_id
+            offset=offset, limit=limit, article_ids=[article_id]
         )
 
     return getter
@@ -48,6 +50,20 @@ def snapshots_getter(parser_db):
     def getter(scrapper_db, offset=0, limit=1000):
         return scrapper_db.get_all_article_snapshots(
             offset=offset, limit=limit, later_than=later_than
+        )
+
+    return getter
+
+
+def snapshots_getter_by_parser_version(parser_db, version):
+    pubs = parser_db.get_publications_by_parser_version(
+        version=version, offset=0, limit=1000
+    )
+    ids = list(set([p["article_id"] for p in pubs]))
+
+    def getter(scrapper_db, offset=0, limit=1000):
+        return scrapper_db.get_article_snapshots_by_article_id(
+            offset=offset, limit=limit, article_ids=ids
         )
 
     return getter
@@ -81,11 +97,8 @@ def parse_meta_tags(body):
     return {**meta_property, **meta_name, **meta_itemprop}
 
 
-def parse_jsonld(body):
-    try:
-        return json.loads(body.find("script", {"type": "application/ld+json"}).text)
-    except AttributeError:
-        return {}
+def parse_metadata(body):
+    return extruct.extract(str(body))
 
 
 def parse_external_links(soups):
@@ -109,7 +122,7 @@ def parse_title(soups):
 
 def parse_published_at(soups):
     published_at = None
-    jsonld = soups["json-ld"]
+    jsonld = soups["metadata"]["json-ld"]
     meta = soups["meta-tags"]
 
     def parse_published_at(jsonld):
@@ -117,9 +130,8 @@ def parse_published_at(soups):
             jsonld["@type"] in ["NewsArticle", "Article", "BlogPosting", "WebPage"]
         ):
             if "datePublished" in jsonld:
-                return datetime.datetime.fromisoformat(
-                    jsonld["datePublished"]
-                ).timestamp()
+                d = dateparser.parse(jsonld["datePublished"])
+                return d.timestamp() if d is not None else None
         return None
 
     def lookup_published_at(items):
@@ -135,9 +147,8 @@ def parse_published_at(soups):
     elif "@graph" in jsonld:
         published_at = lookup_published_at(jsonld["@graph"])
     elif "article:published_time" in meta:
-        published_at = datetime.datetime.fromisoformat(
-            meta["article:published_time"]
-        ).timestamp()
+        d = dateparser.parse(meta["article:published_time"])
+        published_at = d.timestamp() if d is not None else None
 
     return published_at
 
@@ -147,13 +158,14 @@ def parse_soups(sn):
     body = BeautifulSoup(sn["raw_data"], "html.parser")
     summary = BeautifulSoup(doc.summary(), "html.parser")
     metatags = parse_meta_tags(body)
-    jsonld = parse_jsonld(body)
+    metadata = parse_metadata(body)
+    jsonld = {}
     return {
         "doc": doc,
         "body": body,
         "summary": summary,
         "meta-tags": metatags,
-        "json-ld": jsonld,
+        "metadata": metadata,
         "snapshot": sn,
     }
 
@@ -185,7 +197,7 @@ def transform_snapshot(sn):
             "tags": [],
             "metadata": {
                 "meta-tags": soups["meta-tags"],
-                "json-ld": soups["json-ld"],
+                **soups["metadata"],
                 "ga-id": ga_id,
             },
             "comments": [],
