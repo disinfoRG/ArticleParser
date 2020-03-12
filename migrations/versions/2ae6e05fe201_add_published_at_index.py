@@ -21,4 +21,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ik_publication_published_at")
+    op.drop_index("ik_publication_published_at", table_name="publication")
