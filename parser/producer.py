@@ -15,7 +15,7 @@ def transform_site(site):
         "producer_id": site["site_id"],
         "name": site["name"],
         "classification": site["type"],
-        "canonical_url": site["url"],
+        "url": site["url"],
         "languages": json.dumps([]),
         "licenses": json.dumps([]),
         "followership": json.dumps({}),
