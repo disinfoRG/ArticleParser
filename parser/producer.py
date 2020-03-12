@@ -19,6 +19,7 @@ def transform_site(site):
         "languages": json.dumps([]),
         "licenses": json.dumps([]),
         "followership": json.dumps({}),
+        "identifiers": json.dumps({}),
     }
 
 
