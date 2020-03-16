@@ -19,8 +19,14 @@ class DataSaver:
         self.db = db
         self.query = query
 
-    def save(self, item, original):
-        self.query(item, original, self.db)
+    def save(self, item):
+        self.query(item, self.db)
+
+
+class Item:
+    def __init__(self, item, original):
+        self.item = item
+        self.original = original
 
 
 def process_each(items, data_saver, transformer):
@@ -29,9 +35,10 @@ def process_each(items, data_saver, transformer):
     except Exception as e:
         logging.error(e)
     else:
-        for (item, original) in zip(transformed, items):
+        for (t, original) in zip(transformed, items):
+            item = Item(item=t, original=original)
             try:
-                data_saver.save(item, original)
+                data_saver.save(item)
             except Exception as e:
                 logging.error(e)
 
