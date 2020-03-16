@@ -37,10 +37,13 @@ def parse_publication(soups):
     children = list(content.stripped_strings)
     board = children[3]
     text = []
+    connect_from = None
     for line in children[8:]:
-        text.append(line)
         if line.find("◆ From: ") == 0:
+            connect_from = line[len("◆ From: ") :]
             break
+        else:
+            text.append(line)
     publication_text = "\n".join(text)
     external_links = parse_external_links(soups)
     image_links = parse_image_links(soups)
@@ -79,5 +82,5 @@ def parse_publication(soups):
             "ga-id": ga_id,
         },
         "comments": comments,
-        "connect_from": None,
+        "connect_from": connect_from,
     }
