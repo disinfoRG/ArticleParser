@@ -26,6 +26,7 @@ def parse_all_sites(scraper_db, parser_db, args):
         if not args.dump
         else JsonSaver(),
         processor=producer.process,
+        limit=args.limit,
     )
 
 
