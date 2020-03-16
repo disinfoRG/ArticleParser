@@ -20,7 +20,7 @@ class DataSaver:
         self.query = query
 
     def save(self, item):
-        self.query(item, self.db)
+        self.query(self.db, item)
 
 
 class Item:
