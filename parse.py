@@ -5,7 +5,7 @@ import pathlib
 import subprocess
 import argparse
 import logging
-from parser.runner import run_parser
+from parser.runner import run_parser, DbDataGetter
 from parser import version
 import parser.db as db
 import parser.producer as producer
@@ -14,9 +14,8 @@ import parser.publication as publication
 
 def parse_all_sites(scrapper_db, parser_db, dump=False):
     run_parser(
-        from_db=scrapper_db,
         to_db=parser_db,
-        getter=producer.all_sites_getter,
+        data_getter=DbDataGetter(scrapper_db, producer.all_sites_getter),
         saver=producer.saver(dump),
         transformer=producer.transformer,
     )
@@ -24,9 +23,8 @@ def parse_all_sites(scrapper_db, parser_db, dump=False):
 
 def parse_site(scrapper_db, parser_db, site_id, dump=False):
     run_parser(
-        from_db=scrapper_db,
         to_db=parser_db,
-        getter=producer.site_getter(site_id),
+        data_getter=DbDataGetter(scrapper_db, producer.site_getter(site_id)),
         saver=producer.saver(dump),
         transformer=producer.transformer,
     )
@@ -34,9 +32,11 @@ def parse_site(scrapper_db, parser_db, site_id, dump=False):
 
 def parse_article(scrapper_db, parser_db, article_id, dump=False):
     run_parser(
-        from_db=scrapper_db,
         to_db=parser_db,
-        getter=publication.snapshots_getter_by_article_id(parser_db, article_id),
+        data_getter=DbDataGetter(
+            scrapper_db,
+            publication.snapshots_getter_by_article_id(parser_db, article_id),
+        ),
         saver=publication.saver(dump),
         transformer=publication.transformer,
         paginate_len=1000,
@@ -47,9 +47,8 @@ def parse_article(scrapper_db, parser_db, article_id, dump=False):
 def parse_all_articles(scrapper_db, parser_db, limit, dump=False):
     publication.update_parser_info(parser_db)
     run_parser(
-        from_db=scrapper_db,
         to_db=parser_db,
-        getter=publication.snapshots_getter(parser_db),
+        data_getter=DbDataGetter(scrapper_db, publication.snapshots_getter(parser_db)),
         saver=publication.saver(dump),
         transformer=publication.transformer,
         paginate_len=1000,
@@ -59,10 +58,10 @@ def parse_all_articles(scrapper_db, parser_db, limit, dump=False):
 
 def parse_all_old_articles(scrapper_db, parser_db, limit, dump=False):
     run_parser(
-        from_db=scrapper_db,
         to_db=parser_db,
-        getter=publication.snapshots_getter_by_parser_version(
-            parser_db, version=version
+        data_getter=DbDataGetter(
+            scrapper_db,
+            publication.snapshots_getter_by_parser_version(parser_db, version=version),
         ),
         saver=publication.saver(dump),
         transformer=publication.transformer,
@@ -73,9 +72,10 @@ def parse_all_old_articles(scrapper_db, parser_db, limit, dump=False):
 
 def parse_article_by_url(scrapper_db, parser_db, url, dump=False):
     run_parser(
-        from_db=scrapper_db,
         to_db=parser_db,
-        getter=publication.snapshots_getter_by_url(parser_db, url),
+        data_getter=DbDataGetter(
+            scrapper_db, publication.snapshots_getter_by_url(parser_db, url)
+        ),
         saver=publication.saver(dump),
         transformer=publication.transformer,
         paginate_len=1000,
