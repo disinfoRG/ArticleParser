@@ -42,24 +42,19 @@ class JsonSaver:
         json.dump(vars(item), sys.stdout)
 
 
-def process_each(items, data_saver, transformer):
-    try:
-        transformed = transformer(items)
-    except Exception as e:
-        logging.error(e)
-    else:
-        for (t, original) in zip(transformed, items):
-            item = Item(item=t, original=original)
-            try:
-                data_saver.save(item)
-            except Exception as e:
-                logging.error(e)
+def process_each(items, data_saver, processor):
+    for original in items:
+        try:
+            item = processor(original)
+            data_saver.save(Item(item=item, original=original))
+        except Exception as e:
+            logging.error(e)
 
 
-def run_parser(transformer, data_getter, data_saver, batch_size=1000, limit=10000):
+def run_parser(processor, data_getter, data_saver, batch_size=1000, limit=10000):
     for offset in range(0, limit, batch_size):
         items = list(data_getter.items(offset, limit))
         if len(items) == 0:
             break
         logging.info(f"processing items {offset} to {offset + len(items)}")
-        process_each(items=items, data_saver=data_saver, transformer=transformer)
+        process_each(items=items, data_saver=data_saver, processor=processor)

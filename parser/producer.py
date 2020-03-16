@@ -1,8 +1,3 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
-import sys
 import json
 import datetime
 from . import version
@@ -10,7 +5,7 @@ from . import version
 name = "parser.producer"
 
 
-def transform_site(site):
+def process(site):
     return {
         "producer_id": site["site_id"],
         "name": site["name"],
@@ -21,11 +16,6 @@ def transform_site(site):
         "followership": json.dumps({}),
         "identifiers": json.dumps({}),
     }
-
-
-def transformer(sites):
-    for site in sites:
-        yield transform_site(site)
 
 
 def all_sites_getter(scraper_db, offset=0, limit=1000):
