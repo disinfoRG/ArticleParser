@@ -27,7 +27,7 @@ def parse_all_sites(scraper_db, parser_db, dump=False):
 
 def parse_site(scraper_db, parser_db, site_id, dump=False):
     run_parser(
-        data_getter=DbDataGetter(scraper_db, producer.site_getter(site_id)),
+        data_getter=DbDataGetter(scraper_db, producer.site_getter, site_id=site_id),
         data_saver=DataSaver(parser_db, producer.saver(dump)),
         transformer=producer.transformer,
     )
@@ -37,7 +37,9 @@ def parse_article(scraper_db, parser_db, article_id, dump=False):
     run_parser(
         data_getter=DbDataGetter(
             scraper_db,
-            publication.snapshots_getter_by_article_id(parser_db, article_id),
+            publication.snapshots_getter_by_article_id,
+            parser_db=parser_db,
+            article_id=article_id,
         ),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,
@@ -49,7 +51,9 @@ def parse_article(scraper_db, parser_db, article_id, dump=False):
 def parse_all_articles(scraper_db, parser_db, limit, dump=False):
     publication.update_parser_info(parser_db)
     run_parser(
-        data_getter=DbDataGetter(scraper_db, publication.snapshots_getter(parser_db)),
+        data_getter=DbDataGetter(
+            scraper_db, publication.snapshots_getter, parser_db=parser_db
+        ),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,
         batch_size=1000,
@@ -61,7 +65,9 @@ def parse_all_old_articles(scraper_db, parser_db, limit, dump=False):
     run_parser(
         data_getter=DbDataGetter(
             scraper_db,
-            publication.snapshots_getter_by_parser_version(parser_db, version=version),
+            publication.snapshots_getter_by_parser_version,
+            parser_db=parser_db,
+            version=version,
         ),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,
@@ -73,7 +79,10 @@ def parse_all_old_articles(scraper_db, parser_db, limit, dump=False):
 def parse_article_by_url(scraper_db, parser_db, url, dump=False):
     run_parser(
         data_getter=DbDataGetter(
-            scraper_db, publication.snapshots_getter_by_url(parser_db, url)
+            scraper_db,
+            publication.snapshots_getter_by_url,
+            parser_db=parser_db,
+            url=url,
         ),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,

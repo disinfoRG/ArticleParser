@@ -21,25 +21,19 @@ name = "parser.publication"
 readability.readability.log.setLevel(logging.ERROR)
 
 
-def snapshots_getter_by_article_id(parser_db, article_id):
-    def getter(scraper_db, offset=0, limit=1000):
-        return scraper_db.get_article_snapshots_by_article_id(
-            offset=offset, limit=limit, article_ids=[article_id]
-        )
-
-    return getter
-
-
-def snapshots_getter_by_url(parser_db, url):
-    def getter(scraper_db, offset=0, limit=1000):
-        return scraper_db.get_article_snapshots_by_url(
-            offset=offset, limit=limit, url=url
-        )
-
-    return getter
+def snapshots_getter_by_article_id(
+    scraper_db, parser_db, article_id, offset=0, limit=1000
+):
+    return scraper_db.get_article_snapshots_by_article_id(
+        offset=offset, limit=limit, article_ids=[article_id]
+    )
 
 
-def snapshots_getter(parser_db):
+def snapshots_getter_by_url(scraper_db, parser_db, url, offset=0, limit=1000):
+    return scraper_db.get_article_snapshots_by_url(offset=offset, limit=limit, url=url)
+
+
+def snapshots_getter(scraper_db, parser_db, offset=0, limit=100):
     info = json.loads(parser_db.get_parser_info(parser_name=name)["info"])
     later_than = (
         info["last_processed_snapshot_at"]
@@ -47,26 +41,22 @@ def snapshots_getter(parser_db):
         else 0
     )
 
-    def getter(scraper_db, offset=0, limit=1000):
-        return scraper_db.get_all_article_snapshots(
-            offset=offset, limit=limit, later_than=later_than
-        )
-
-    return getter
+    return scraper_db.get_all_article_snapshots(
+        offset=offset, limit=limit, later_than=later_than
+    )
 
 
-def snapshots_getter_by_parser_version(parser_db, version):
+def snapshots_getter_by_parser_version(
+    scraper_db, parser_db, version, offset=0, limit=1000
+):
     pubs = parser_db.get_publications_by_parser_version(
         version=version, offset=0, limit=1000
     )
     ids = list(set([p["article_id"] for p in pubs]))
 
-    def getter(scraper_db, offset=0, limit=1000):
-        return scraper_db.get_article_snapshots_by_article_id(
-            offset=offset, limit=limit, article_ids=ids
-        )
-
-    return getter
+    return scraper_db.get_article_snapshots_by_article_id(
+        offset=offset, limit=limit, article_ids=ids
+    )
 
 
 def parse_meta_tags(body):

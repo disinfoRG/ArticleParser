@@ -1,11 +1,14 @@
 import logging
+from functools import partial
 
 
 class DbDataGetter:
     def __init__(self, db, query, **kwargs):
         self.db = db
-        self.query = query
-        self.kwargs = kwargs
+        if len(kwargs) != 0:
+            self.query = partial(query, **kwargs)
+        else:
+            self.query = query
 
     def items(self, offset, limit):
         return self.query(self.db, offset=offset, limit=limit)
