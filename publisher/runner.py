@@ -13,8 +13,8 @@ def processor(items, write, transformer):
             logging.error(e)
 
 
-def runner(from_db, getter, writer, transformer, paginate_len=100):
-    offset, limit = 0, paginate_len
+def runner(from_db, getter, writer, transformer, batch_size=100):
+    offset, limit = 0, batch_size
     writer.open()
     while True:
         items = list(getter(from_db, offset=offset, limit=limit))

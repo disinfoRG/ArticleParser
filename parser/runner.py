@@ -33,10 +33,10 @@ def process_each(items, data_saver, transformer):
                 logging.error(e)
 
 
-def run_parser(transformer, data_getter, data_saver, paginate_len=1000, limit=10000):
+def run_parser(transformer, data_getter, data_saver, batch_size=1000, limit=10000):
     offset = 0
     while True:
-        page_limit = paginate_len if limit - offset > paginate_len else limit - offset
+        page_limit = batch_size if limit - offset > batch_size else limit - offset
         items = list(data_getter.items(offset, page_limit))
         if len(items) == 0:
             break
