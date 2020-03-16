@@ -13,6 +13,7 @@ from . import version
 
 name = "parser.publication"
 
+logger = logging.getLogger(__name__)
 readability.readability.log.setLevel(logging.ERROR)
 
 
@@ -186,6 +187,32 @@ def process(snapshot):
         }
 
 
+def save_ga_id(parser_db, item):
+    publication = item.item
+    if "ga-id" in publication["metadata"] and len(publication["metadata"]["ga-id"]) > 0:
+        ga_id = publication["metadata"]["ga-id"]
+        producer = parser_db.get_producer_by_id(producer_id=publication["producer_id"])
+        identifiers = json.loads(producer["identifiers"])
+        if "ga-id" not in identifiers:
+            logger.debug(f"add ga-id to producer {publication['producer_id']}")
+            parser_db.update_producer_identifiers(
+                producer_id=publication["producer_id"],
+                identifiers=json.dumps({**identifiers, "ga-id": ga_id}),
+            )
+        else:
+            if not set(ga_id) <= set(identifiers["ga-id"]):
+                logger.debug(f"add ga-id to producer {publication['producer_id']}")
+                parser_db.update_producer_identifiers(
+                    producer_id=publication["producer_id"],
+                    identifiers=json.dumps(
+                        {
+                            **identifiers,
+                            "ga-id": list(set(ga_id + identifiers["ga-id"])),
+                        }
+                    ),
+                )
+
+
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
     with parser_db.transaction():
@@ -223,6 +250,7 @@ def saver(parser_db, item):
             last_processed_article_id=article_snapshot["article_id"],
             last_processed_snapshot_at=article_snapshot["snapshot_at"],
         )
+        save_ga_id(parser_db, item)
 
 
 def update_parser_info(db):
