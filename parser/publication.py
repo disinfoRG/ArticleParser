@@ -213,6 +213,16 @@ def save_ga_id(parser_db, item):
                 )
 
 
+def save_producer_active_dates(parser_db, item):
+    publication = item.item
+    if publication["published_at"] is not None:
+        logger.debug(f"set active dates for {publication['producer_id']}")
+        parser_db.update_producer_active_dates(
+            producer_id=publication["producer_id"],
+            published_at=publication["published_at"],
+        )
+
+
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
     with parser_db.transaction():
@@ -251,6 +261,7 @@ def saver(parser_db, item):
             last_processed_snapshot_at=article_snapshot["snapshot_at"],
         )
         save_ga_id(parser_db, item)
+        save_producer_active_dates(parser_db, item)
 
 
 def update_parser_info(db):
