@@ -173,6 +173,7 @@ def process(snapshot):
             "last_updated_at": soups["snapshot"]["last_updated_at"],
             "title": title,
             "publication_text": text,
+            "author": None,
             "urls": external_links,
             "image_urls": image_links,
             "hashtags": [],
@@ -184,6 +185,7 @@ def process(snapshot):
                 "ga-id": ga_id,
             },
             "comments": [],
+            "connect_from": None,
         }
 
 
