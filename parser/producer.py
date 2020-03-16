@@ -32,14 +32,11 @@ def all_sites_getter(scraper_db, offset=0, limit=1000):
     return scraper_db.get_all_sites(offset=offset, limit=limit)
 
 
-def site_getter(site_id):
-    def getter(scraper_db, offset=0, limit=1):
-        if offset == 0 and limit > 1:
-            return [scraper_db.get_site_by_id(site_id=site_id)]
-        else:
-            return []
-
-    return getter
+def site_getter(scraper_db, site_id, offset=0, limit=1):
+    if offset == 0 and limit > 1:
+        return [scraper_db.get_site_by_id(site_id=site_id)]
+    else:
+        return []
 
 
 def saver(dump=False):
