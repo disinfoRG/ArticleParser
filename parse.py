@@ -19,50 +19,58 @@ import parser.publication as publication
 logger = logging.getLogger(__name__)
 
 
-def parse_all_sites(scraper_db, parser_db, dump=False):
+def parse_all_sites(scraper_db, parser_db, args):
     run_parser(
         data_getter=DbDataGetter(scraper_db, producer.all_sites_getter),
-        data_saver=DataSaver(parser_db, producer.saver) if not dump else JsonSaver(),
+        data_saver=DataSaver(parser_db, producer.saver)
+        if not args.dump
+        else JsonSaver(),
         processor=producer.process,
     )
 
 
-def parse_site(scraper_db, parser_db, site_id, dump=False):
+def parse_site(scraper_db, parser_db, site_id, args):
     run_parser(
         data_getter=DbDataGetter(scraper_db, producer.site_getter, site_id=site_id),
-        data_saver=DataSaver(parser_db, producer.saver) if not dump else JsonSaver(),
+        data_saver=DataSaver(parser_db, producer.saver)
+        if not args.dump
+        else JsonSaver(),
         processor=producer.process,
     )
 
 
-def parse_article(scraper_db, parser_db, article_id, dump=False):
+def parse_article(scraper_db, parser_db, article_id, args):
     run_parser(
         data_getter=DbDataGetter(
             scraper_db,
             publication.snapshots_getter_by_article_id,
             article_id=article_id,
         ),
-        data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
+        data_saver=DataSaver(parser_db, publication.saver)
+        if not args.dump
+        else JsonSaver(),
         processor=publication.process,
         batch_size=1000,
-        limit=100,
+        limit=args.limit,
     )
 
 
-def parse_all_articles(scraper_db, parser_db, limit, dump=False):
+def parse_all_articles(scraper_db, parser_db, args):
     publication.update_parser_info(parser_db)
     run_parser(
         data_getter=DbDataGetter(
             scraper_db, publication.snapshots_getter, parser_db=parser_db
         ),
-        data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
+        data_saver=DataSaver(parser_db, publication.saver)
+        if not args.dump
+        else JsonSaver(),
         processor=publication.process,
         batch_size=1000,
-        limit=limit,
+        limit=args.limit,
     )
 
 
-def parse_all_old_articles(scraper_db, parser_db, limit, dump=False):
+def parse_all_old_articles(scraper_db, parser_db, args):
     run_parser(
         data_getter=DbDataGetter(
             scraper_db,
@@ -70,22 +78,26 @@ def parse_all_old_articles(scraper_db, parser_db, limit, dump=False):
             parser_db=parser_db,
             version=version,
         ),
-        data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
+        data_saver=DataSaver(parser_db, publication.saver)
+        if not args.dump
+        else JsonSaver(),
         processor=publication.process,
         batch_size=1000,
-        limit=limit,
+        limit=args.limit,
     )
 
 
-def parse_article_by_url(scraper_db, parser_db, url, dump=False):
+def parse_article_by_url(scraper_db, parser_db, url, args):
     run_parser(
         data_getter=DbDataGetter(
             scraper_db, publication.snapshots_getter_by_url, url=url
         ),
-        data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
+        data_saver=DataSaver(parser_db, publication.saver)
+        if not args.dump
+        else JsonSaver(),
         processor=publication.process,
         batch_size=1000,
-        limit=100,
+        limit=args.limit,
     )
 
 
@@ -97,22 +109,22 @@ def main(args):
 
     if args.command == "producer":
         if args.id is not None:
-            parse_site(scraper_db, parser_db, args.id, dump=args.dump)
+            parse_site(scraper_db, parser_db, args.id, args=args)
         elif args.site_id is not None:
-            parse_site(scraper_db, parser_db, args.site_id, dump=args.dump)
+            parse_site(scraper_db, parser_db, args.site_id, args=args)
         else:
-            parse_all_sites(scraper_db, parser_db, dump=args.dump)
+            parse_all_sites(scraper_db, parser_db, args=args)
     elif args.command == "publication":
         if args.id is not None:
-            parse_article(scraper_db, parser_db, args.id, dump=args.dump)
+            parse_article(scraper_db, parser_db, args.id, args=args)
         elif args.article_id is not None:
-            parse_article(scraper_db, parser_db, args.article_id, dump=args.dump)
+            parse_article(scraper_db, parser_db, args.article_id, args=args)
         elif args.url is not None:
-            parse_article_by_url(scraper_db, parser_db, args.url, dump=args.dump)
+            parse_article_by_url(scraper_db, parser_db, args.url, args=args)
         elif args.update:
-            parse_all_old_articles(scraper_db, parser_db, args.limit, dump=args.dump)
+            parse_all_old_articles(scraper_db, parser_db, args=args)
         else:
-            parse_all_articles(scraper_db, parser_db, args.limit, dump=args.dump)
+            parse_all_articles(scraper_db, parser_db, args=args)
     else:
         raise Exception(f"Unknown command {args.command}")
 
