@@ -1,5 +1,8 @@
 import datetime
+import re
 from parser.gatrack import parse_ga_id
+
+ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
 
 def parse_external_links(soups):
@@ -18,6 +21,29 @@ def parse_datetime(text):
         return datetime.datetime.strptime(text, "%a %b %d %H:%M:%S %Y").timestamp()
     except:
         return None
+
+
+def parse_comment(i, item):
+    text = item.find(class_="push-content").text
+    text = text[len(": ") :]
+
+    ipdatetime = item.find(class_="push-ipdatetime").text.strip()
+    m = ip_pattern.search(ipdatetime)
+
+    connect_from = m.group(1) if m is not None else None
+    published_at = ipdatetime[m.end(1) :].strip() if m is not None else ipdatetime
+
+    result = {
+        "id": i,
+        "reaction": item.find(class_="push-tag").text.strip(),
+        "author": item.find(class_="push-userid").text,
+        "text": text,
+        "published_at": published_at,
+    }
+    if connect_from is not None:
+        result["connect_from"] = connect_from
+
+    return result
 
 
 def parse_publication(soups):
@@ -42,6 +68,10 @@ def parse_publication(soups):
         if line.find("◆ From: ") == 0:
             connect_from = line[len("◆ From: ") :]
             break
+        elif line.find("※ 發信站: 批踢踢實業坊(ptt.cc), 來自: ") == 0:
+            m = ip_pattern.search(line)
+            connect_from = m.group(1) if m is not None else None
+            break
         else:
             text.append(line)
     publication_text = "\n".join(text)
@@ -49,13 +79,7 @@ def parse_publication(soups):
     image_links = parse_image_links(soups)
 
     comments = [
-        {
-            "id": i,
-            "reaction": item.find(class_="push-tag").text.strip(),
-            "author": item.find(class_="push-userid").text,
-            "text": item.find(class_="push-content").text[1:],
-            "published_at": item.find(class_="push-ipdatetime").text,
-        }
+        parse_comment(i, item)
         for i, item in enumerate(soups["body"].select("#main-content .push"))
     ]
 
