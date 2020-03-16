@@ -67,6 +67,7 @@ def parse_publication(soups):
         "last_updated_at": soups["snapshot"]["last_updated_at"],
         "title": stash["title"],
         "publication_text": publication_text,
+        "author": stash["author"],
         "urls": external_links,
         "image_urls": image_links,
         "hashtags": [],
@@ -78,4 +79,5 @@ def parse_publication(soups):
             "ga-id": ga_id,
         },
         "comments": comments,
+        "connect_from": None,
     }
