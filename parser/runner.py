@@ -2,6 +2,7 @@ import logging
 import json
 import sys
 from functools import partial
+import traceback
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +52,7 @@ def process_each(items, data_saver, processor):
             item = processor(original)
             data_saver.save(Item(item=item, original=original))
         except Exception as e:
-            logger.error(e)
+            logger.error(traceback.format_exc(e))
 
 
 def run_parser(processor, data_getter, data_saver, batch_size=1000, limit=10000):
