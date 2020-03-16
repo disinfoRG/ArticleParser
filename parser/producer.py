@@ -39,27 +39,17 @@ def site_getter(scraper_db, site_id, offset=0, limit=1):
         return []
 
 
-def saver(dump=False):
-    if dump:
-
-        def json_dumper(_, item):
-            json.dump(vars(item), sys.stdout)
-
-        return json_dumper
-
-    def save_to_db(to_db, item):
-        producer, site = item.item, item.original
-        with to_db.transaction():
-            producer_id = to_db.upsert_producer(producer)
-            to_db.upsert_producer_mapping(
-                site_id=site["site_id"],
-                producer_id=producer_id,
-                info=json.dumps(
-                    {
-                        "last_processed_at": int(datetime.datetime.now().timestamp()),
-                        "parser": {"name": name, "version": version},
-                    }
-                ),
-            )
-
-    return save_to_db
+def saver(parser_db, item):
+    producer, site = item.item, item.original
+    with parser_db.transaction():
+        producer_id = parser_db.upsert_producer(producer)
+        parser_db.upsert_producer_mapping(
+            site_id=site["site_id"],
+            producer_id=producer_id,
+            info=json.dumps(
+                {
+                    "last_processed_at": int(datetime.datetime.now().timestamp()),
+                    "parser": {"name": name, "version": version},
+                }
+            ),
+        )

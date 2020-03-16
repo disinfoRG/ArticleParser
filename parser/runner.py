@@ -1,4 +1,6 @@
 import logging
+import json
+import sys
 from functools import partial
 
 
@@ -15,18 +17,29 @@ class DbDataGetter:
 
 
 class DataSaver:
-    def __init__(self, db, query):
+    def __init__(self, db, query, info_interval=1000):
         self.db = db
         self.query = query
+        self._info_interval = info_interval
+        self._count = 0
 
     def save(self, item):
         self.query(self.db, item)
+        self._count += 1
+        if self._count % self._info_interval == 0:
+            logging.info(f"save item {self._count}")
+            logging.debug(vars(item))
 
 
 class Item:
     def __init__(self, item, original):
         self.item = item
         self.original = original
+
+
+class JsonSaver:
+    def save(self, item):
+        json.dump(vars(item), sys.stdout)
 
 
 def process_each(items, data_saver, transformer):
