@@ -203,62 +203,43 @@ def transformer(snapshots):
             logging.error(e)
 
 
-def saver(dump=False):
-    save_log_period = 1000
-    save_count = 0
-
-    if dump:
-
-        def json_dumper(_, item):
-            json.dump(vars(item), sys.stdout)
-
-        return json_dumper
-
-    def publication_saver(parser_db, item):
-        publication, article_snapshot = item.item, item.original
-        nonlocal save_count
-        nonlocal save_log_period
-        if save_count == save_log_period:
-            logging.info(f"save publication {publication['publication_id']}")
-            save_count = 0
-        with parser_db.transaction():
-            publication_id = parser_db.upsert_publication(
+def saver(parser_db, item):
+    publication, article_snapshot = item.item, item.original
+    with parser_db.transaction():
+        publication_id = parser_db.upsert_publication(
+            {
+                **publication,
+                **{
+                    k: json.dumps(publication[k])
+                    for k in [
+                        "urls",
+                        "image_urls",
+                        "hashtags",
+                        "keywords",
+                        "tags",
+                        "metadata",
+                        "comments",
+                    ]
+                    if k in publication
+                },
+            }
+        )
+        parser_db.upsert_publication_mapping(
+            article_id=article_snapshot["article_id"],
+            snapshot_at=article_snapshot["snapshot_at"],
+            publication_id=publication_id,
+            info=json.dumps(
                 {
-                    **publication,
-                    **{
-                        k: json.dumps(publication[k])
-                        for k in [
-                            "urls",
-                            "image_urls",
-                            "hashtags",
-                            "keywords",
-                            "tags",
-                            "metadata",
-                            "comments",
-                        ]
-                        if k in publication
-                    },
+                    "last_processed_at": int(datetime.datetime.now().timestamp()),
+                    "parser": {"name": name, "version": version},
                 }
-            )
-            parser_db.upsert_publication_mapping(
-                article_id=article_snapshot["article_id"],
-                snapshot_at=article_snapshot["snapshot_at"],
-                publication_id=publication_id,
-                info=json.dumps(
-                    {
-                        "last_processed_at": int(datetime.datetime.now().timestamp()),
-                        "parser": {"name": name, "version": version},
-                    }
-                ),
-            )
-            parser_db.update_parser_last_processed(
-                parser_name=name,
-                last_processed_article_id=article_snapshot["article_id"],
-                last_processed_snapshot_at=article_snapshot["snapshot_at"],
-            )
-        save_count = save_count + 1
-
-    return publication_saver
+            ),
+        )
+        parser_db.update_parser_last_processed(
+            parser_name=name,
+            last_processed_article_id=article_snapshot["article_id"],
+            last_processed_snapshot_at=article_snapshot["snapshot_at"],
+        )
 
 
 def update_parser_info(db):
