@@ -16,6 +16,8 @@ import parser.db as db
 import parser.producer as producer
 import parser.publication as publication
 
+logger = logging.getLogger(__name__)
+
 
 def parse_all_sites(scraper_db, parser_db, dump=False):
     run_parser(
