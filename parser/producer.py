@@ -28,14 +28,14 @@ def transformer(sites):
         yield transform_site(site)
 
 
-def all_sites_getter(scrapper_db, offset=0, limit=1000):
-    return scrapper_db.get_all_sites(offset=offset, limit=limit)
+def all_sites_getter(scraper_db, offset=0, limit=1000):
+    return scraper_db.get_all_sites(offset=offset, limit=limit)
 
 
 def site_getter(site_id):
-    def getter(scrapper_db, offset=0, limit=1):
+    def getter(scraper_db, offset=0, limit=1):
         if offset == 0 and limit > 1:
-            return [scrapper_db.get_site_by_id(site_id=site_id)]
+            return [scraper_db.get_site_by_id(site_id=site_id)]
         else:
             return []
 
