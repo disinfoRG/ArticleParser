@@ -4,6 +4,9 @@ import sys
 from functools import partial
 
 
+logger = logging.getLogger(__name__)
+
+
 class DbDataGetter:
     def __init__(self, db, query, **kwargs):
         self.db = db
@@ -27,8 +30,8 @@ class DataSaver:
         self.query(self.db, item)
         self._count += 1
         if self._count % self._info_interval == 0:
-            logging.info(f"save item {self._count}")
-            logging.debug(vars(item))
+            logger.info(f"save item {self._count}")
+            logger.debug(vars(item))
 
 
 class Item:
@@ -48,7 +51,7 @@ def process_each(items, data_saver, processor):
             item = processor(original)
             data_saver.save(Item(item=item, original=original))
         except Exception as e:
-            logging.error(e)
+            logger.error(e)
 
 
 def run_parser(processor, data_getter, data_saver, batch_size=1000, limit=10000):
@@ -56,5 +59,5 @@ def run_parser(processor, data_getter, data_saver, batch_size=1000, limit=10000)
         items = list(data_getter.items(offset, limit))
         if len(items) == 0:
             break
-        logging.info(f"processing items {offset} to {offset + len(items)}")
+        logger.info(f"processing items {offset} to {offset + len(items)}")
         process_each(items=items, data_saver=data_saver, processor=processor)
