@@ -36,7 +36,7 @@ def parse_article(scraper_db, parser_db, article_id, dump=False):
         ),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,
-        paginate_len=1000,
+        batch_size=1000,
         limit=100,
     )
 
@@ -47,7 +47,7 @@ def parse_all_articles(scraper_db, parser_db, limit, dump=False):
         data_getter=DbDataGetter(scraper_db, publication.snapshots_getter(parser_db)),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,
-        paginate_len=1000,
+        batch_size=1000,
         limit=limit,
     )
 
@@ -60,7 +60,7 @@ def parse_all_old_articles(scraper_db, parser_db, limit, dump=False):
         ),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,
-        paginate_len=1000,
+        batch_size=1000,
         limit=limit,
     )
 
@@ -72,7 +72,7 @@ def parse_article_by_url(scraper_db, parser_db, url, dump=False):
         ),
         data_saver=DataSaver(parser_db, publication.saver(dump)),
         transformer=publication.transformer,
-        paginate_len=1000,
+        batch_size=1000,
         limit=100,
     )
 
