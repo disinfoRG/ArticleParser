@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+import os
 import sys
 import pathlib
 import subprocess
@@ -78,7 +83,7 @@ def parse_article_by_url(scraper_db, parser_db, url, dump=False):
 
 
 def main(args):
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
     scraper_db = db.scraper()
     parser_db = db.parser()
