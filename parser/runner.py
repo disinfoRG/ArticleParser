@@ -20,13 +20,13 @@ class DataSaver:
         self.query(item, original, self.db)
 
 
-def process_each(incoming, data_saver, transformer):
+def process_each(items, data_saver, transformer):
     try:
-        transformed = transformer(incoming)
+        transformed = transformer(items)
     except Exception as e:
         logging.error(e)
     else:
-        for (item, original) in zip(transformed, incoming):
+        for (item, original) in zip(transformed, items):
             try:
                 data_saver.save(item, original)
             except Exception as e:
@@ -41,7 +41,7 @@ def run_parser(transformer, data_getter, data_saver, paginate_len=1000, limit=10
         if len(items) == 0:
             break
         logging.info(f"processing items {offset} to {offset + page_limit}")
-        process_each(incoming=items, data_saver=data_saver, transformer=transformer)
+        process_each(items=items, data_saver=data_saver, transformer=transformer)
         offset += page_limit
         if offset >= limit:
             break
