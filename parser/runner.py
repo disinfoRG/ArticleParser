@@ -7,6 +7,9 @@ class DbDataGetter:
         self.query = query
         self.kwargs = kwargs
 
+    def items(self, offset, limit):
+        return list(self.query(self.db, offset=offset, limit=limit))
+
 
 def process_each(incoming, to_db, saver, transformer):
     try:
@@ -25,7 +28,7 @@ def run_parser(to_db, saver, transformer, data_getter, paginate_len=100, limit=1
     offset = 0
     while True:
         page_limit = paginate_len if limit - offset > paginate_len else limit - offset
-        items = list(data_getter.query(data_getter.db, offset=offset, limit=page_limit))
+        items = data_getter.items(offset, page_limit)
         if len(items) == 0:
             break
         logging.info(f"processing items {offset} to {offset + page_limit}")
