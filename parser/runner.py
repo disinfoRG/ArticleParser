@@ -34,14 +34,9 @@ def process_each(items, data_saver, transformer):
 
 
 def run_parser(transformer, data_getter, data_saver, batch_size=1000, limit=10000):
-    offset = 0
-    while True:
-        page_limit = batch_size if limit - offset > batch_size else limit - offset
-        items = list(data_getter.items(offset, page_limit))
+    for offset in range(0, limit, batch_size):
+        items = list(data_getter.items(offset, limit))
         if len(items) == 0:
             break
-        logging.info(f"processing items {offset} to {offset + page_limit}")
+        logging.info(f"processing items {offset} to {offset + len(items)}")
         process_each(items=items, data_saver=data_saver, transformer=transformer)
-        offset += page_limit
-        if offset >= limit:
-            break
