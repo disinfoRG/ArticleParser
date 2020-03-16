@@ -1,6 +1,13 @@
 import logging
 
 
+class DbDataGetter:
+    def __init__(self, db, query, **kwargs):
+        self.db = db
+        self.query = query
+        self.kwargs = kwargs
+
+
 def process_each(incoming, to_db, saver, transformer):
     try:
         transformed = transformer(incoming)
@@ -14,13 +21,11 @@ def process_each(incoming, to_db, saver, transformer):
                 logging.error(e)
 
 
-def run_parser(
-    from_db, to_db, getter, saver, transformer, paginate_len=100, limit=10000
-):
+def run_parser(to_db, saver, transformer, data_getter, paginate_len=100, limit=10000):
     offset = 0
     while True:
         page_limit = paginate_len if limit - offset > paginate_len else limit - offset
-        items = list(getter(from_db, offset=offset, limit=page_limit))
+        items = list(data_getter.query(data_getter.db, offset=offset, limit=page_limit))
         if len(items) == 0:
             break
         logging.info(f"processing items {offset} to {offset + page_limit}")
