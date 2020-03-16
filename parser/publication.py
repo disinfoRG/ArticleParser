@@ -22,8 +22,8 @@ readability.readability.log.setLevel(logging.ERROR)
 
 
 def snapshots_getter_by_article_id(parser_db, article_id):
-    def getter(scrapper_db, offset=0, limit=1000):
-        return scrapper_db.get_article_snapshots_by_article_id(
+    def getter(scraper_db, offset=0, limit=1000):
+        return scraper_db.get_article_snapshots_by_article_id(
             offset=offset, limit=limit, article_ids=[article_id]
         )
 
@@ -31,8 +31,8 @@ def snapshots_getter_by_article_id(parser_db, article_id):
 
 
 def snapshots_getter_by_url(parser_db, url):
-    def getter(scrapper_db, offset=0, limit=1000):
-        return scrapper_db.get_article_snapshots_by_url(
+    def getter(scraper_db, offset=0, limit=1000):
+        return scraper_db.get_article_snapshots_by_url(
             offset=offset, limit=limit, url=url
         )
 
@@ -47,8 +47,8 @@ def snapshots_getter(parser_db):
         else 0
     )
 
-    def getter(scrapper_db, offset=0, limit=1000):
-        return scrapper_db.get_all_article_snapshots(
+    def getter(scraper_db, offset=0, limit=1000):
+        return scraper_db.get_all_article_snapshots(
             offset=offset, limit=limit, later_than=later_than
         )
 
@@ -61,8 +61,8 @@ def snapshots_getter_by_parser_version(parser_db, version):
     )
     ids = list(set([p["article_id"] for p in pubs]))
 
-    def getter(scrapper_db, offset=0, limit=1000):
-        return scrapper_db.get_article_snapshots_by_article_id(
+    def getter(scraper_db, offset=0, limit=1000):
+        return scraper_db.get_article_snapshots_by_article_id(
             offset=offset, limit=limit, article_ids=ids
         )
 

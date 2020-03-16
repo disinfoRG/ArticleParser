@@ -2,8 +2,8 @@ import pugsql
 import os
 
 
-def scrapper():
-    db = pugsql.module("queries/scrapper")
+def scraper():
+    db = pugsql.module("queries/scraper")
     db.connect(os.getenv("SCRAPER_DB_URL"))
     return db
 
