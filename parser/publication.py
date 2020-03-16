@@ -209,12 +209,12 @@ def saver(dump=False):
 
     if dump:
 
-        def json_dumper(item, db):
+        def json_dumper(_, item):
             json.dump(vars(item), sys.stdout)
 
         return json_dumper
 
-    def publication_saver(item, parser_db):
+    def publication_saver(parser_db, item):
         publication, article_snapshot = item.item, item.original
         nonlocal save_count
         nonlocal save_log_period
