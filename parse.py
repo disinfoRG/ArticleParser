@@ -38,7 +38,6 @@ def parse_article(scraper_db, parser_db, article_id, dump=False):
         data_getter=DbDataGetter(
             scraper_db,
             publication.snapshots_getter_by_article_id,
-            parser_db=parser_db,
             article_id=article_id,
         ),
         data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
@@ -79,10 +78,7 @@ def parse_all_old_articles(scraper_db, parser_db, limit, dump=False):
 def parse_article_by_url(scraper_db, parser_db, url, dump=False):
     run_parser(
         data_getter=DbDataGetter(
-            scraper_db,
-            publication.snapshots_getter_by_url,
-            parser_db=parser_db,
-            url=url,
+            scraper_db, publication.snapshots_getter_by_url, url=url
         ),
         data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
         transformer=publication.transformer,
