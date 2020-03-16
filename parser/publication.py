@@ -1,12 +1,7 @@
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from bs4 import BeautifulSoup
 from readability import Document
 import datetime
 import json
-import sys
 import dateparser
 import extruct
 
@@ -141,25 +136,24 @@ def parse_published_at(soups):
     return published_at
 
 
-def parse_soups(sn):
-    doc = Document(sn["raw_data"])
-    body = BeautifulSoup(sn["raw_data"], "html.parser")
+def parse_soups(snapshot):
+    doc = Document(snapshot["raw_data"])
+    body = BeautifulSoup(snapshot["raw_data"], "html.parser")
     summary = BeautifulSoup(doc.summary(), "html.parser")
     metatags = parse_meta_tags(body)
     metadata = parse_metadata(body)
-    jsonld = {}
     return {
         "doc": doc,
         "body": body,
         "summary": summary,
         "meta-tags": metatags,
         "metadata": metadata,
-        "snapshot": sn,
+        "snapshot": snapshot,
     }
 
 
-def transform_snapshot(sn):
-    soups = parse_soups(sn)
+def process(snapshot):
+    soups = parse_soups(snapshot)
     if soups["snapshot"]["article_type"] == "PTT":
         return parser.ptt.parse_publication(soups)
     else:
@@ -190,15 +184,6 @@ def transform_snapshot(sn):
             },
             "comments": [],
         }
-
-
-def transformer(snapshots):
-    for snapshot in snapshots:
-        try:
-            logging.debug(f"transform snapshot {snapshot['article_id']}")
-            yield transform_snapshot(snapshot)
-        except Exception as e:
-            logging.error(e)
 
 
 def saver(parser_db, item):

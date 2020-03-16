@@ -21,7 +21,7 @@ def parse_all_sites(scraper_db, parser_db, dump=False):
     run_parser(
         data_getter=DbDataGetter(scraper_db, producer.all_sites_getter),
         data_saver=DataSaver(parser_db, producer.saver) if not dump else JsonSaver(),
-        transformer=producer.transformer,
+        processor=producer.process,
     )
 
 
@@ -29,7 +29,7 @@ def parse_site(scraper_db, parser_db, site_id, dump=False):
     run_parser(
         data_getter=DbDataGetter(scraper_db, producer.site_getter, site_id=site_id),
         data_saver=DataSaver(parser_db, producer.saver) if not dump else JsonSaver(),
-        transformer=producer.transformer,
+        processor=producer.process,
     )
 
 
@@ -41,7 +41,7 @@ def parse_article(scraper_db, parser_db, article_id, dump=False):
             article_id=article_id,
         ),
         data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
-        transformer=publication.transformer,
+        processor=publication.process,
         batch_size=1000,
         limit=100,
     )
@@ -54,7 +54,7 @@ def parse_all_articles(scraper_db, parser_db, limit, dump=False):
             scraper_db, publication.snapshots_getter, parser_db=parser_db
         ),
         data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
-        transformer=publication.transformer,
+        processor=publication.process,
         batch_size=1000,
         limit=limit,
     )
@@ -69,7 +69,7 @@ def parse_all_old_articles(scraper_db, parser_db, limit, dump=False):
             version=version,
         ),
         data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
-        transformer=publication.transformer,
+        processor=publication.process,
         batch_size=1000,
         limit=limit,
     )
@@ -81,7 +81,7 @@ def parse_article_by_url(scraper_db, parser_db, url, dump=False):
             scraper_db, publication.snapshots_getter_by_url, url=url
         ),
         data_saver=DataSaver(parser_db, publication.saver) if not dump else JsonSaver(),
-        transformer=publication.transformer,
+        processor=publication.process,
         batch_size=1000,
         limit=100,
     )
