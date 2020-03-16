@@ -21,15 +21,13 @@ name = "parser.publication"
 readability.readability.log.setLevel(logging.ERROR)
 
 
-def snapshots_getter_by_article_id(
-    scraper_db, parser_db, article_id, offset=0, limit=1000
-):
+def snapshots_getter_by_article_id(scraper_db, article_id, offset=0, limit=1000):
     return scraper_db.get_article_snapshots_by_article_id(
         offset=offset, limit=limit, article_ids=[article_id]
     )
 
 
-def snapshots_getter_by_url(scraper_db, parser_db, url, offset=0, limit=1000):
+def snapshots_getter_by_url(scraper_db, url, offset=0, limit=1000):
     return scraper_db.get_article_snapshots_by_url(offset=offset, limit=limit, url=url)
 
 
