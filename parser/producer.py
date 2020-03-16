@@ -42,12 +42,13 @@ def site_getter(scraper_db, site_id, offset=0, limit=1):
 def saver(dump=False):
     if dump:
 
-        def json_dumper(prod, orig, db):
-            json.dump({"producer": prod, "original": orig}, sys.stdout)
+        def json_dumper(item, db):
+            json.dump(vars(item), sys.stdout)
 
         return json_dumper
 
-    def save_to_db(producer, site, to_db):
+    def save_to_db(item, to_db):
+        producer, site = item.item, item.original
         with to_db.transaction():
             producer_id = to_db.upsert_producer(producer)
             to_db.upsert_producer_mapping(
