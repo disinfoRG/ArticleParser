@@ -6,7 +6,11 @@ ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
 
 def parse_external_links(soups):
-    return [x["href"] for x in soups["summary"].find_all("a", href=lambda x: x)]
+    return [
+        x["href"]
+        for x in soups["summary"].find_all("a", href=lambda x: x)
+        if x["href"] != soups["snapshot"]["url"]
+    ]
 
 
 def parse_image_links(soups):
