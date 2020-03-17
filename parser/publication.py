@@ -53,6 +53,12 @@ def snapshots_getter_by_parser_version(
     )
 
 
+def snapshots_getter_by_site(scraper_db, site_id, offset=0, limit=1000):
+    return scraper_db.get_article_snapshots_by_site(
+        offset=offset, limit=limit, site_id=site_id
+    )
+
+
 def parse_meta_tags(body):
     meta_property = {
         x["property"]: x["content"]
