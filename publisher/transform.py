@@ -19,29 +19,13 @@ def transform_producer_json(producer):
     return producer
 
 
-def transform_producer_csv(producer):
-    producer = transform_producer_json(producer)
-    for list_col in ["languages", "licenses"]:
-        producer.update({list_col: ", ".join(producer[list_col])})
-    for dict_col in ["followership"]:
-        producer.update(
-            {
-                dict_col: ", ".join(
-                    [f"{key}: {value}" for key, value in producer[dict_col]]
-                )
-            }
-        )
-    return producer
-
-
 def producers(fmt="jsonl"):
     def transformer(rows):
         if fmt == "jsonl":
             for p in rows:
                 yield transform_producer_json(p)
         elif fmt == "csv":
-            for p in rows:
-                yield transform_producer_csv(p)
+            raise RuntimeError("Not implemented")
 
     return transformer
 
@@ -68,8 +52,12 @@ def transform_publication(publication, full_text=False):
 
 
 def publications(fmt="jsonl", full_text=False):
-    def transformer(rows):
-        for p in rows:
-            yield transform_publication(p, full_text=full_text)
+    if fmt == "jsonl":
 
-    return transformer
+        def transformer(rows):
+            for p in rows:
+                yield transform_publication(p, full_text=full_text)
+
+        return transformer
+    else:
+        raise RuntimeError("Not implemented")
