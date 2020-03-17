@@ -18,10 +18,9 @@ queries.connect(os.getenv("DB_URL"))
 producer_fieldnames = [
     "id",
     "name",
-    "canonical_url",
+    "identifiers",
     "classification",
-    "languages",
-    "licenses",
+    "url",
     "first_seen_at",
     "last_updated_at",
     "followership",
@@ -29,19 +28,22 @@ producer_fieldnames = [
 
 publication_fieldnames = [
     "id",
+    "version",
+    "identifiers",
     "producer_id",
     "canonical_url",
     "title",
     "text",
-    "language",
-    "license",
+    "author",
     "published_at",
     "first_seen_at",
     "last_updated_at",
-    "hashtags",
     "urls",
+    "hashtags",
     "keywords",
-    "tags",
+    "reactions",
+    "comments",
+    "connect_from",
 ]
 
 

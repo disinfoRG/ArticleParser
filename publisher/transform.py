@@ -4,7 +4,7 @@ import datetime
 
 def transform_producer_json(producer):
     producer["id"] = producer.pop("producer_id")
-    for json_col in ["languages", "licenses", "followership"]:
+    for json_col in ["languages", "licenses", "followership", "identifiers"]:
         producer.update({json_col: json.loads(producer[json_col])})
     for datetime_col in ["first_seen_at", "last_updated_at"]:
         producer.update(
@@ -33,10 +33,11 @@ def producers(fmt="jsonl"):
 def transform_publication(publication, full_text=False):
     publication["id"] = publication.pop("publication_id")
     publication["text"] = publication.pop("publication_text")
+    del publication["tags"]
     if not full_text:
         publication["text"] = publication["text"][:280]
     del publication["metadata"]
-    for col in ["hashtags", "urls", "keywords", "tags"]:
+    for col in ["hashtags", "urls", "keywords", "comments"]:
         if publication[col] is not None:
             publication.update({col: json.loads(publication[col])})
     for datetime_col in ["published_at", "first_seen_at", "last_updated_at"]:
