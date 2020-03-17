@@ -52,7 +52,8 @@ def process_each(items, data_saver, processor):
             item = processor(original)
             data_saver.save(Item(item=item, original=original))
         except Exception as e:
-            logger.error(traceback.format_exc(e))
+            logger.error(f"error processing item {item['publication_id']}")
+            logger.error(traceback.format_stack())
 
 
 def run_parser(processor, data_getter, data_saver, batch_size=1000, limit=10000):
