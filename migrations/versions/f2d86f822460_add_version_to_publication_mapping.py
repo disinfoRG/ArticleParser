@@ -28,8 +28,8 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_column("publication_mapping", "version")
     op.drop_index(
         "uq_publication_mapping_publication_id_version",
         table_name="publication_mapping",
     )
+    op.drop_column("publication_mapping", "version")
