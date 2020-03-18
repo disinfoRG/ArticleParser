@@ -58,7 +58,7 @@ def process_each(items, data_saver, processor):
 
 def run_parser(processor, data_getter, data_saver, batch_size=1000, limit=10000):
     for offset in range(0, limit, batch_size):
-        items = list(data_getter.items(offset, limit))
+        items = list(data_getter.items(offset, batch_size))
         if len(items) == 0:
             break
         logger.info(f"processing items {offset} to {offset + len(items)}")
