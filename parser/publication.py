@@ -235,9 +235,48 @@ def save_producer_active_dates(parser_db, item):
         )
 
 
+def is_updated(exist_pub, new_pub):
+    for field in ["title", "publication_text", "comments"]:
+        if exist_pub[field] != new_pub[field]:
+            return True
+    return False
+
+
+def to_publication(row):
+    return {
+        **row,
+        **{
+            field: json.loads(row[field])
+            for field in [
+                "urls",
+                "hashtags",
+                "keywords",
+                "tags",
+                "metadata",
+                "comments",
+            ]
+        },
+    }
+
+
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
     with parser_db.transaction():
+        existing = list(
+            parser_db.get_publication_by_article_id(
+                article_id=article_snapshot["article_id"]
+            )
+        )
+        if len(existing) > 0:
+            latest = to_publication(existing[-1])
+            logger.debug(
+                f"found existing data of article {article_snapshot['article_id']}"
+            )
+            if not is_updated(latest, publication):
+                logger.debug(
+                    f"skipping publication of article {article_snapshot['article_id']} because content unchanged"
+                )
+                return
         logger.debug(f"saving publication of article {article_snapshot['article_id']}")
         publication_id = parser_db.upsert_publication(
             {
@@ -246,7 +285,6 @@ def saver(parser_db, item):
                     k: json.dumps(publication[k])
                     for k in [
                         "urls",
-                        "image_urls",
                         "hashtags",
                         "keywords",
                         "tags",
