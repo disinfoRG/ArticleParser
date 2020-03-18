@@ -9,12 +9,15 @@ import logging
 import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
+import parser.db as db
 from . import version
 
 name = "parser.publication"
 
 logger = logging.getLogger(__name__)
 readability.readability.log.setLevel(logging.ERROR)
+
+scraper_db = db.scraper()
 
 
 def snapshots_getter_by_article_id(scraper_db, article_id, offset=0, limit=1000):
@@ -161,6 +164,15 @@ def parse_soups(snapshot):
         "metadata": metadata,
         "snapshot": snapshot,
     }
+
+
+def process_id(snapshot):
+    snapshot = scraper_db.get_article_snapshots_by_id_snapshot_at(
+        article_id=snapshot["article_id"], snapshot_at=snapshot["snapshot_at"]
+    )
+    if snapshot is None:
+        raise RuntimeError(f"Unknown article snapshot {snapshot}")
+    return process(snapshot)
 
 
 def process(snapshot):

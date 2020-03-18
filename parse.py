@@ -110,7 +110,7 @@ def parse_article_by_site(scraper_db, parser_db, site_id, args):
         data_saver=DataSaver(parser_db, publication.saver)
         if not args.dump
         else JsonSaver(),
-        processor=publication.process,
+        processor=publication.process_id,
         batch_size=1000,
         limit=args.limit,
     )

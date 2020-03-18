@@ -52,7 +52,7 @@ def process_each(items, data_saver, processor):
             item = processor(original)
             data_saver.save(Item(item=item, original=original))
         except Exception as e:
-            logger.error(f"error processing item {item['publication_id']}")
+            logger.error(f"error processing item {original['article_id']}")
             logger.error(traceback.format_exc())
 
 
