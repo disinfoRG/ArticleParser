@@ -298,7 +298,7 @@ def saver(parser_db, item):
             {
                 **publication,
                 **{
-                    k: json.dumps(publication[k])
+                    k: json.dumps(publication[k], ensure_ascii=False)
                     for k in [
                         "urls",
                         "hashtags",
