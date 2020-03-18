@@ -91,6 +91,7 @@ def parse_publication(soups):
 
     return {
         "publication_id": soups["snapshot"]["article_id"],
+        "version": soups["snapshot"]["snapshot_at"],
         "producer_id": soups["snapshot"]["site_id"],
         "canonical_url": soups["snapshot"]["url"],
         "published_at": stash["published_at"],

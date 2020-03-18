@@ -188,6 +188,7 @@ def process(snapshot):
         published_at = parse_published_at(soups)
         return {
             "publication_id": soups["snapshot"]["article_id"],
+            "version": soups["snapshot"]["snapshot_at"],
             "producer_id": soups["snapshot"]["site_id"],
             "canonical_url": soups["snapshot"]["url"],
             "published_at": published_at,
@@ -271,6 +272,14 @@ def to_publication(row):
     }
 
 
+def is_new_version(existing, publication):
+    for old_version in existing:
+        old_version = to_publication(old_version)
+        if not is_updated(old_version, publication):
+            return False
+    return True
+
+
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
     with parser_db.transaction():
@@ -279,17 +288,12 @@ def saver(parser_db, item):
                 article_id=article_snapshot["article_id"]
             )
         )
-        if len(existing) > 0:
-            latest = to_publication(existing[-1])
+        if not is_new_version(existing, publication):
             logger.debug(
-                f"found existing data of article {article_snapshot['article_id']}"
+                f"skipping publication of article {article_snapshot} because content unchanged"
             )
-            if not is_updated(latest, publication):
-                logger.debug(
-                    f"skipping publication of article {article_snapshot['article_id']} because content unchanged"
-                )
-                return
-        logger.debug(f"saving publication of article {article_snapshot['article_id']}")
+            return
+        logger.debug(f"saving publication of article {article_snapshot}")
         publication_id = parser_db.upsert_publication(
             {
                 **publication,
@@ -310,8 +314,8 @@ def saver(parser_db, item):
         parser_db.upsert_publication_mapping(
             article_id=article_snapshot["article_id"],
             snapshot_at=article_snapshot["snapshot_at"],
-            publication_id=publication_id,
-            version=article_snapshot["snapshot_at"],
+            publication_id=publication["publication_id"],
+            version=publication["version"],
             info=json.dumps(
                 {
                     "last_processed_at": int(datetime.datetime.now().timestamp()),
