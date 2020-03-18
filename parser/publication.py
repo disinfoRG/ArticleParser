@@ -238,6 +238,7 @@ def save_producer_active_dates(parser_db, item):
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
     with parser_db.transaction():
+        logger.debug(f"saving publication of article {article_snapshot['article_id']}")
         publication_id = parser_db.upsert_publication(
             {
                 **publication,
@@ -260,6 +261,7 @@ def saver(parser_db, item):
             article_id=article_snapshot["article_id"],
             snapshot_at=article_snapshot["snapshot_at"],
             publication_id=publication_id,
+            version=article_snapshot["snapshot_at"],
             info=json.dumps(
                 {
                     "last_processed_at": int(datetime.datetime.now().timestamp()),
