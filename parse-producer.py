@@ -48,7 +48,7 @@ def main(args):
             )
         )
     elif args.command == "show":
-        producer = queries.get_producer_by_id(producer_id=args.id)
+        producer = queries.get_producer_by_id_with_stats(producer_id=args.id)
         print(tabulate(producer.items()))
     else:
         raise RuntimeError(f"Unknown command '{args.command}'")
