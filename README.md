@@ -21,8 +21,8 @@ $ alembic upgrade head
 Then
 
 ```sh
-$ python ./parser.py producer
-$ python ./parser.py --limit 1000 publication
+$ ./ap.py parse producer
+$ ./ap.py parse --limit 1000 publication
 ```
 
 You can run these commands multiple times to parse source data in batch.  `--limit <number>` sets the number of entries to parse for each batch.
