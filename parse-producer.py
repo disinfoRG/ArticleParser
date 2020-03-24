@@ -47,12 +47,20 @@ def main(args):
                 ],
             )
         )
+    elif args.command == "show":
+        producer = queries.get_producer_by_id(producer_id=args.id)
+        print(tabulate(producer.items()))
+    else:
+        raise RuntimeError(f"Unknown command '{args.command}'")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
     cmds.add_parser("list")
+
+    show_cmd = cmds.add_parser("show")
+    show_cmd.add_argument("id", type=int, help="producer id")
 
     args = parser.parse_args()
     main(args)
