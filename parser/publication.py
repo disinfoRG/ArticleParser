@@ -10,6 +10,7 @@ import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
 import parser.db as db
+import parser.scraper as scraper
 from . import version
 
 name = "parser.publication"
@@ -17,17 +18,15 @@ name = "parser.publication"
 logger = logging.getLogger(__name__)
 readability.readability.log.setLevel(logging.ERROR)
 
-scraper_db = db.scraper()
-
 
 def snapshots_getter_by_article_id(scraper_db, article_id, offset=0, limit=1000):
-    return scraper_db.get_article_snapshots_by_article_id(
-        offset=offset, limit=limit, article_ids=[article_id]
+    return scraper.get_snapshots(
+        scraper_db, article_id=article_id, offset=offset, limit=limit
     )
 
 
 def snapshots_getter_by_url(scraper_db, url, offset=0, limit=1000):
-    return scraper_db.get_article_snapshots_by_url(offset=offset, limit=limit, url=url)
+    return scraper.get_snapshots(scraper_db, url=url, offset=offset, limit=limit)
 
 
 def snapshots_getter(scraper_db, parser_db, offset=0, limit=100):
@@ -38,8 +37,8 @@ def snapshots_getter(scraper_db, parser_db, offset=0, limit=100):
         else 0
     )
 
-    return scraper_db.get_all_article_snapshots(
-        offset=offset, limit=limit, later_than=later_than
+    return scraper.get_snapshots(
+        scraper_db, snapshot_at_later_than=later_than, offset=offset, limit=limit
     )
 
 
@@ -51,14 +50,14 @@ def snapshots_getter_by_parser_version(
     )
     ids = list(set([p["article_id"] for p in pubs]))
 
-    return scraper_db.get_article_snapshots_by_article_id(
-        offset=offset, limit=limit, article_ids=ids
+    return scraper.get_article_snapshots(
+        scraper_db, article_ids=ids, offset=offset, limit=limit
     )
 
 
 def snapshots_getter_by_site(scraper_db, site_id, offset=0, limit=1000):
-    return scraper_db.get_article_snapshots_by_site(
-        offset=offset, limit=limit, site_id=site_id
+    return scraper.get_article_snapshots(
+        scraper_db, site_id=site_id, offset=offset, limit=limit
     )
 
 
@@ -164,15 +163,6 @@ def parse_soups(snapshot):
         "metadata": metadata,
         "snapshot": snapshot,
     }
-
-
-def process_id(snapshot):
-    snapshot = scraper_db.get_article_snapshots_by_id_snapshot_at(
-        article_id=snapshot["article_id"], snapshot_at=snapshot["snapshot_at"]
-    )
-    if snapshot is None:
-        raise RuntimeError(f"Unknown article snapshot {snapshot}")
-    return process(snapshot)
 
 
 def process(snapshot):

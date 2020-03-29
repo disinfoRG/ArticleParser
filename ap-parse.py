@@ -12,6 +12,7 @@ from parser import version
 import parser.db as db
 import parser.producer as producer
 import parser.publication as publication
+import parser.scraper as scraper
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +108,7 @@ def parse_article_by_site(scraper_db, parser_db, site_id, args):
         data_saver=DataSaver(parser_db, publication.saver)
         if not args.dump
         else JsonSaver(),
-        processor=publication.process_id,
+        processor=publication.process,
         batch_size=1000,
         limit=args.limit,
     )
@@ -116,7 +117,13 @@ def parse_article_by_site(scraper_db, parser_db, site_id, args):
 def main(args):
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
-    scraper_db = db.scraper()
+    scraper_db = scraper.ScraperDb(
+        "ZeroScraper",
+        os.getenv("SCRAPER_DB_URL"),
+        site_table_name="Site",
+        article_table_name="Article",
+        snapshot_table_name="ArticleSnapshot",
+    )
     parser_db = db.parser()
 
     if args.command == "producer":
