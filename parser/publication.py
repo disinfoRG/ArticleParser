@@ -49,13 +49,13 @@ def snapshots_getter_by_parser_version(
     )
     ids = list(set([p["article_id"] for p in pubs]))
 
-    return scraper.get_article_snapshots(
+    return scraper.get_snapshots(
         scraper_db, article_ids=ids, offset=offset, limit=limit
     )
 
 
 def snapshots_getter_by_site(scraper_db, site_id, offset=0, limit=1000):
-    return scraper.get_article_snapshots(
+    return scraper.get_snapshots(
         scraper_db, site_id=site_id, offset=offset, limit=limit
     )
 
