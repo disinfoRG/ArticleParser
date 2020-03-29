@@ -115,35 +115,70 @@ def parse_title(soups):
     return soups["doc"].title()
 
 
-def parse_published_at(soups):
-    published_at = None
-    jsonld = soups["metadata"]["json-ld"]
-    meta = soups["meta-tags"]
-
-    def parse_published_at(jsonld):
+def parse_published_at_from_jsonld(jsonld):
+    def parse_(jsonld):
         if "@type" in jsonld and (
             jsonld["@type"] in ["NewsArticle", "Article", "BlogPosting", "WebPage"]
         ):
             if "datePublished" in jsonld:
-                d = dateparser.parse(jsonld["datePublished"])
-                return d.timestamp() if d is not None else None
+                return dateparser.parse(jsonld["datePublished"])
         return None
 
-    def lookup_published_at(items):
-        for item in items:
-            r = parse_published_at(item)
-            if r is not None:
-                return r
+    for item in jsonld:
+        r = parse_(item)
+        if r is not None:
+            return r
+    return None
 
-    if isinstance(jsonld, list):
-        published_at = lookup_published_at(jsonld)
-    elif "@type" in jsonld:
-        published_at = parse_published_at(jsonld)
-    elif "@graph" in jsonld:
-        published_at = lookup_published_at(jsonld["@graph"])
-    elif "article:published_time" in meta:
-        d = dateparser.parse(meta["article:published_time"])
-        published_at = d.timestamp() if d is not None else None
+
+def parse_published_at_from_rdfa(rdfa):
+    def parse_(rdfa):
+        if "article:published_time" in rdfa:
+            for item in rdfa["article:published_time"]:
+                if "@value" in item:
+                    return dateparser.parse(item["@value"])
+        return None
+
+    for item in rdfa:
+        r = parse_(item)
+        if r is not None:
+            return r
+    return None
+
+
+def parse_published_at_from_opengraph(og):
+    def parse_(og):
+        for prop in og["properties"]:
+            if prop[0] == "article:published_time":
+                return dateparser.parse(prop[1])
+        return None
+
+    for item in og:
+        r = parse_(item)
+        if r is not None:
+            return r
+    return None
+
+
+def parse_published_at(soups):
+    published_at = None
+
+    if isinstance(soups["metadata"]["rdfa"], list):
+        d = parse_published_at_from_rdfa(soups["metadata"]["rdfa"])
+        if d is not None:
+            published_at = d.timestamp()
+    if isinstance(soups["metadata"]["opengraph"], list):
+        d = parse_published_at_from_opengraph(soups["metadata"]["opengraph"])
+        if d is not None:
+            published_at = d.timestamp()
+    if isinstance(soups["metadata"]["json-ld"], list):
+        d = parse_published_at_from_jsonld(soups["metadata"]["json-ld"])
+        if d is not None:
+            published_at = d.timestamp()
+    if "article:published_time" in soups["meta-tags"]:
+        d = dateparser.parse(soups["meta-tags"]["article:published_time"])
+        if d is not None:
+            published_at = d.timestamp()
 
     return published_at
 
