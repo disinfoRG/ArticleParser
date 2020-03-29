@@ -9,7 +9,6 @@ import logging
 import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
-import parser.db as db
 import parser.scraper as scraper
 from . import version
 
