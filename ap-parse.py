@@ -124,7 +124,7 @@ def main(args):
         article_table_name="Article",
         snapshot_table_name="ArticleSnapshot",
     )
-    parser_db = pugsql.module("queries/parser")
+    parser_db = pugsql.module("queries")
     parser_db.connect(os.getenv("DB_URL"))
 
     if args.command == "producer":
