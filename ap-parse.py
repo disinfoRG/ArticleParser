@@ -7,9 +7,9 @@ load_dotenv()
 import os
 import argparse
 import logging
+import pugsql
 from parser.runner import run_parser, DbDataGetter, DataSaver, JsonSaver
 from parser import version
-import parser.db as db
 import parser.producer as producer
 import parser.publication as publication
 import parser.scraper as scraper
@@ -124,7 +124,8 @@ def main(args):
         article_table_name="Article",
         snapshot_table_name="ArticleSnapshot",
     )
-    parser_db = db.parser()
+    parser_db = pugsql.module("queries/parser")
+    parser_db.connect(os.getenv("DB_URL"))
 
     if args.command == "producer":
         if args.id is not None:
