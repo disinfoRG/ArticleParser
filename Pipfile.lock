@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a0103f91ba1bf87ebe7812c2511ac6ceb1af441f7c3f0b6af3bc50e5d76e6fbd"
+            "sha256": "25e1740e637efd2b33359eda2bbbb4d815dbcec32fc3b8aa6c2a7583fd9e8742"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -302,6 +302,7 @@
             "hashes": [
                 "sha256:c4cca4aed606297afbe90d4306b49ad3a4cd36feb3f87e4bfd655c57fd9ef445"
             ],
+            "index": "pypi",
             "version": "==1.3.15"
         },
         "tabulate": {
@@ -400,11 +401,11 @@
         },
         "importlib-metadata": {
             "hashes": [
-                "sha256:06f5b3a99029c7134207dd882428a66992a9de2bef7c2b699b5641f9886c3302",
-                "sha256:b97607a1a18a5100839aec1dc26a1ea17ee0d93b20b0f008d80a5a050afb200b"
+                "sha256:2a688cbaa90e0cc587f1df48bdc97a6eadccdcd9c35fb3f976a09e3b5016d90f",
+                "sha256:34513a8a0c4962bc66d35b359558fd8a5e10cd472d37aec5f66858addef32c1e"
             ],
             "markers": "python_version < '3.8'",
-            "version": "==1.5.0"
+            "version": "==1.6.0"
         },
         "nodeenv": {
             "hashes": [
@@ -452,10 +453,10 @@
         },
         "virtualenv": {
             "hashes": [
-                "sha256:87831f1070534b636fea2241dd66f3afe37ac9041bcca6d0af3215cdcfbf7d82",
-                "sha256:f3128d882383c503003130389bf892856341c1da12c881ae24d6358c82561b55"
+                "sha256:4e399f48c6b71228bf79f5febd27e3bbb753d9d5905776a86667bc61ab628a25",
+                "sha256:9e81279f4a9d16d1c0654a127c2c86e5bca2073585341691882c1e66e31ef8a5"
             ],
-            "version": "==20.0.13"
+            "version": "==20.0.15"
         },
         "zipp": {
             "hashes": [
