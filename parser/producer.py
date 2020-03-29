@@ -1,5 +1,6 @@
 import json
 import datetime
+import parser.scraper as scraper
 from . import version
 
 name = "parser.producer"
@@ -19,12 +20,12 @@ def process(site):
 
 
 def all_sites_getter(scraper_db, offset=0, limit=1000):
-    return scraper_db.get_all_sites(offset=offset, limit=limit)
+    return scraper.get_sites(scraper_db, offset=offset, limit=limit).fetchall()
 
 
 def site_getter(scraper_db, site_id, offset=0, limit=1):
     if offset == 0 and limit > 1:
-        return [scraper_db.get_site_by_id(site_id=site_id)]
+        return [scraper.get_site(scraper_db, site_id=site_id)]
     else:
         return []
 
