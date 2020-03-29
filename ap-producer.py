@@ -14,7 +14,7 @@ from tabulate import tabulate
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 
-queries = pugsql.module("queries/parser")
+queries = pugsql.module("queries")
 queries.connect(os.getenv("DB_URL"))
 
 

@@ -12,7 +12,7 @@ from publisher.runner import runner
 from publisher import writer
 from publisher import transform
 
-queries = pugsql.module("queries/parser")
+queries = pugsql.module("queries")
 queries.connect(os.getenv("DB_URL"))
 
 producer_fieldnames = [
