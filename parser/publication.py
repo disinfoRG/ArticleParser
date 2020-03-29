@@ -257,6 +257,7 @@ def to_publication(row):
                 "metadata",
                 "comments",
             ]
+            if row[field]
         },
     }
 
