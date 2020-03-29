@@ -153,6 +153,21 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--update", action="store_true", help="updates all results of old parsers"
+    )
+    # XXX not implemented
+    # parser.add_argument("--limit-sec", type=int, help="limit run time in seconds")
+    parser.add_argument(
+        "--limit", type=int, default=10000, help="limit number of entries to parse"
+    )
+    parser.add_argument(
+        "--dump",
+        action="store_true",
+        help="dump data in STDOUT in JSON instead of writing to db",
+    )
+
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
 
     prod_cmd = cmds.add_parser("producer", help="parses producers in parser db")
@@ -174,20 +189,6 @@ if __name__ == "__main__":
         "--site-id", type=int, help="parse all articles of this site", nargs="?"
     )
     pub_cmd.add_argument("--url", help="url the article to parse in news db", nargs="?")
-
-    parser.add_argument(
-        "--update", action="store_true", help="updates all results of old parsers"
-    )
-    # XXX not implemented
-    # parser.add_argument("--limit-sec", type=int, help="limit run time in seconds")
-    parser.add_argument(
-        "--limit", type=int, default=10000, help="limit number of entries to parse"
-    )
-    parser.add_argument(
-        "--dump",
-        action="store_true",
-        help="dump data in STDOUT in JSON instead of writing to db",
-    )
 
     args = parser.parse_args()
     main(args)
