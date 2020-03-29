@@ -114,18 +114,23 @@ def parse_article_by_site(scraper_db, parser_db, site_id, args):
     )
 
 
+def get_scraper(db, scraper_name):
+    sc = db.get_scraper_by_name(scraper_name=scraper_name)
+    return scraper.ScraperDb(
+        sc["scraper_name"],
+        os.getenv(sc["db_url_var"]),
+        site_table_name=sc["site_table_name"],
+        article_table_name=sc["article_table_name"],
+        snapshot_table_name=sc["snapshot_table_name"],
+    )
+
+
 def main(args):
     logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 
-    scraper_db = scraper.ScraperDb(
-        "ZeroScraper",
-        os.getenv("SCRAPER_DB_URL"),
-        site_table_name="Site",
-        article_table_name="Article",
-        snapshot_table_name="ArticleSnapshot",
-    )
     parser_db = pugsql.module("queries")
     parser_db.connect(os.getenv("DB_URL"))
+    scraper_db = get_scraper(parser_db, "ZeroScraper")
 
     if args.command == "producer":
         if args.id is not None:
@@ -166,6 +171,9 @@ if __name__ == "__main__":
         "--dump",
         action="store_true",
         help="dump data in STDOUT in JSON instead of writing to db",
+    )
+    parser.add_argument(
+        "--scraper", default="ZeroScraper", help="name of scraper upstream to use"
     )
 
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
