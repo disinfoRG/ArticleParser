@@ -308,11 +308,31 @@ def is_new_version(existing, publication):
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
     with parser_db.transaction():
+        parser_db.upsert_publication_mapping(
+            article_id=article_snapshot["article_id"],
+            snapshot_at=article_snapshot["snapshot_at"],
+            publication_id=publication["publication_id"],
+            version=publication["version"],
+            info=json.dumps(
+                {
+                    "last_processed_at": int(datetime.datetime.now().timestamp()),
+                    "parser": {"name": name, "version": version},
+                }
+            ),
+        )
+        parser_db.update_parser_last_processed(
+            parser_name=name,
+            last_processed_article_id=article_snapshot["article_id"],
+            last_processed_snapshot_at=article_snapshot["snapshot_at"],
+        )
+        save_ga_id(parser_db, item)
+        save_producer_active_dates(parser_db, item)
         existing = list(
             parser_db.get_publication_by_article_id(
                 article_id=article_snapshot["article_id"]
             )
         )
+
         if not is_new_version(existing, publication):
             logger.debug(
                 f"skipping publication of article {article_snapshot} because content unchanged"
@@ -336,25 +356,6 @@ def saver(parser_db, item):
                 },
             }
         )
-        parser_db.upsert_publication_mapping(
-            article_id=article_snapshot["article_id"],
-            snapshot_at=article_snapshot["snapshot_at"],
-            publication_id=publication["publication_id"],
-            version=publication["version"],
-            info=json.dumps(
-                {
-                    "last_processed_at": int(datetime.datetime.now().timestamp()),
-                    "parser": {"name": name, "version": version},
-                }
-            ),
-        )
-        parser_db.update_parser_last_processed(
-            parser_name=name,
-            last_processed_article_id=article_snapshot["article_id"],
-            last_processed_snapshot_at=article_snapshot["snapshot_at"],
-        )
-        save_ga_id(parser_db, item)
-        save_producer_active_dates(parser_db, item)
 
 
 def update_parser_info(db):
