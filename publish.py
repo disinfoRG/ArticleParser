@@ -129,6 +129,9 @@ if __name__ == "__main__":
             help="save to file (or directory if group by is not 'all')",
         )
         parser.add_argument("--producer", help="producer id of the publication data")
+        parser.add_argument(
+            "--full-text", action="store_true", help="publish full text"
+        )
         return parser.parse_args()
 
     args = parse_args()
@@ -148,7 +151,9 @@ if __name__ == "__main__":
             runner(
                 from_db=queries,
                 getter=publications_getter(),
-                transformer=transform.publications(fmt=args.format),
+                transformer=transform.publications(
+                    fmt=args.format, full_text=args.full_text
+                ),
                 writer=writer.fromformat(
                     args.format, filename=args.output, fieldnames=publication_fieldnames
                 ),
@@ -163,7 +168,9 @@ if __name__ == "__main__":
                     getter=publications_getter(
                         producer_id=args.producer, published_at_range=(start, end)
                     ),
-                    transformer=transform.publications(fmt=args.format),
+                    transformer=transform.publications(
+                        fmt=args.format, full_text=args.full_text
+                    ),
                     writer=writer.fromformat(
                         args.format,
                         filename=(
