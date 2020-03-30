@@ -51,15 +51,29 @@ def producers_getter(db, offset=0, limit=1000):
     return db.get_all_producers(offset=offset, limit=limit)
 
 
-def publications_getter(published_at_range=None):
+def publications_getter(producer_id=None, published_at_range=None):
     def getter(db, offset=0, limit=1000):
         if published_at_range is not None:
             start, end = published_at_range
-            return db.get_publications_by_published_at(
-                start=start, end=end, limit=limit, offset=offset
-            )
+            if producer_id is not None:
+                return db.get_publications_by_producer_published_at(
+                    producer_id=producer_id,
+                    start=start,
+                    end=end,
+                    limit=limit,
+                    offset=offset,
+                )
+            else:
+                return db.get_publications_by_published_at(
+                    start=start, end=end, limit=limit, offset=offset
+                )
         else:
-            return db.get_all_publications(limit=limit, offset=offset)
+            if producer_id is not None:
+                return db.get_all_publications(
+                    producer_id=producer_id, limit=limit, offset=offset
+                )
+            else:
+                return db.get_all_publications(limit=limit, offset=offset)
 
     return getter
 
@@ -114,6 +128,7 @@ if __name__ == "__main__":
             default="-",
             help="save to file (or directory if group by is not 'all')",
         )
+        parser.add_argument("--producer", help="producer id of the publication data")
         return parser.parse_args()
 
     args = parse_args()
@@ -145,7 +160,9 @@ if __name__ == "__main__":
                 end = start + 86400
                 runner(
                     from_db=queries,
-                    getter=publications_getter(published_at_range=(start, end)),
+                    getter=publications_getter(
+                        producer_id=args.producer, published_at_range=(start, end)
+                    ),
                     transformer=transform.publications(fmt=args.format),
                     writer=writer.fromformat(
                         args.format,
