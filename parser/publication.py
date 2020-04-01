@@ -163,6 +163,10 @@ def parse_published_at_from_opengraph(og):
 def parse_published_at(soups):
     published_at = None
 
+    if "publishdate" in soups["meta-tags"]:
+        d = dateparser.parse(soups["meta-tags"]["publishdate"])
+        if d is not None:
+            published_at = d.timestamp()
     if isinstance(soups["metadata"]["rdfa"], list):
         d = parse_published_at_from_rdfa(soups["metadata"]["rdfa"])
         if d is not None:
