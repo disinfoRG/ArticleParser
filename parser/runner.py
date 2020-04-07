@@ -43,18 +43,14 @@ class Item:
 
 class JsonSaver:
     def save(self, item):
-        json.dump(
-            {"item": item.item, "original": dict(item.original)},
-            sys.stdout,
-            ensure_ascii=False,
-        )
+        json.dump(vars(item), sys.stdout, ensure_ascii=False)
 
 
 def process_each(items, data_saver, processor):
     for original in items:
         try:
             item = processor(original)
-            data_saver.save(Item(item=item, original=original))
+            data_saver.save(Item(item=item, original=dict(original)))
         except Exception as e:
             logger.error(f"error processing item {original['article_id']}")
             logger.error(traceback.format_exc())
