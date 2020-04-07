@@ -46,11 +46,11 @@ def snapshots_getter_by_parser_version(
 ):
     if site_id is None:
         pubs = parser_db.get_publications_by_parser_version(
-            version=version, offset=0, limit=1000
+            version=version, offset=offset, limit=limit
         )
     else:
         pubs = parser_db.get_publications_by_parser_version_by_producer(
-            producer_id=site_id, version=version, offset=0, limit=100
+            producer_id=site_id, version=version, offset=offset, limit=limit
         )
     ids = list(set([p["article_id"] for p in pubs]))
 
