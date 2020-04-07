@@ -167,6 +167,14 @@ def parse_published_at(soups):
         d = dateparser.parse(soups["meta-tags"]["publishdate"])
         if d is not None:
             published_at = d.timestamp()
+    if "pubdate" in soups["meta-tags"]:
+        d = dateparser.parse(soups["meta-tags"]["pubdate"])
+        if d is not None:
+            published_at = d.timestamp()
+    if "datePublished" in soups["meta-tags"]:
+        d = dateparser.parse(soups["meta-tags"]["datePublished"])
+        if d is not None:
+            published_at = d.timestamp()
     if isinstance(soups["metadata"]["rdfa"], list):
         d = parse_published_at_from_rdfa(soups["metadata"]["rdfa"])
         if d is not None:
