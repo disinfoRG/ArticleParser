@@ -75,6 +75,7 @@ def parse_all_old_articles(scraper_db, parser_db, args):
             scraper_db,
             publication.snapshots_getter_by_parser_version,
             parser_db=parser_db,
+            site_id=args.site_id,
             version=version,
         ),
         data_saver=DataSaver(parser_db, publication.saver)
@@ -146,10 +147,10 @@ def main(args):
             parse_article(scraper_db, parser_db, args.article_id, args=args)
         elif args.url is not None:
             parse_article_by_url(scraper_db, parser_db, args.url, args=args)
-        elif args.site_id is not None:
-            parse_article_by_site(scraper_db, parser_db, args.site_id, args=args)
         elif args.update:
             parse_all_old_articles(scraper_db, parser_db, args=args)
+        elif args.site_id is not None:
+            parse_article_by_site(scraper_db, parser_db, args.site_id, args=args)
         else:
             parse_all_articles(scraper_db, parser_db, args=args)
     else:
@@ -159,9 +160,6 @@ def main(args):
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--update", action="store_true", help="updates all results of old parsers"
-    )
     # XXX not implemented
     # parser.add_argument("--limit-sec", type=int, help="limit run time in seconds")
     parser.add_argument(
@@ -197,6 +195,11 @@ def parse_args():
         "--site-id", type=int, help="parse all articles of this site", nargs="?"
     )
     pub_cmd.add_argument("--url", help="url the article to parse in news db", nargs="?")
+    pub_cmd.add_argument(
+        "--update",
+        action="store_true",
+        help="updates all publications parsed by older parsers",
+    )
 
     return parser.parse_args()
 

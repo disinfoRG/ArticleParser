@@ -42,11 +42,16 @@ def snapshots_getter(scraper_db, parser_db, offset=0, limit=100):
 
 
 def snapshots_getter_by_parser_version(
-    scraper_db, parser_db, version, offset=0, limit=1000
+    scraper_db, parser_db, version, site_id=None, offset=0, limit=1000
 ):
-    pubs = parser_db.get_publications_by_parser_version(
-        version=version, offset=0, limit=1000
-    )
+    if site_id is None:
+        pubs = parser_db.get_publications_by_parser_version(
+            version=version, offset=0, limit=1000
+        )
+    else:
+        pubs = parser_db.get_publications_by_parser_version_by_producer(
+            producer_id=site_id, version=version, offset=0, limit=100
+        )
     ids = list(set([p["article_id"] for p in pubs]))
 
     return scraper.get_snapshots(
@@ -285,7 +290,19 @@ def save_producer_active_dates(parser_db, item):
 
 
 def is_updated(exist_pub, new_pub):
-    for field in ["title", "publication_text", "comments"]:
+    for field in [
+        "title",
+        "publication_text",
+        "published_at",
+        "comments",
+        "hashtags",
+        "urls",
+        "keywords",
+        "tags",
+        "metadata",
+        "author",
+        "connect_from",
+    ]:
         if exist_pub[field] != new_pub[field]:
             return True
     return False
