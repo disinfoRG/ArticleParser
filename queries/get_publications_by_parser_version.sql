@@ -4,8 +4,6 @@ WHERE
   JSON_EXTRACT(info, "$.parser.version") < :version
   -- XXX old version string
   OR JSON_EXTRACT(info, "$.parser.version") = "0.9.0"
-LIMIT :limit
-OFFSET :offset
 
 -- :name get_publications_by_parser_version_by_producer :many
 SELECT p0.scraper_id, p0.article_id, p0.snapshot_at, p0.publication_id, p0.version, p0.info
@@ -17,5 +15,3 @@ WHERE
   (JSON_EXTRACT(info, "$.parser.version") < :version
   -- XXX old version string
   OR JSON_EXTRACT(info, "$.parser.version") = "0.9.0")
-LIMIT :limit
-OFFSET :offset
