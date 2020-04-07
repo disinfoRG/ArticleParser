@@ -43,7 +43,11 @@ class Item:
 
 class JsonSaver:
     def save(self, item):
-        json.dump(vars(item), sys.stdout)
+        json.dump(
+            {"item": item.item, "original": dict(item.original)},
+            sys.stdout,
+            ensure_ascii=False,
+        )
 
 
 def process_each(items, data_saver, processor):
