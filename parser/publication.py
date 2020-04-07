@@ -260,14 +260,14 @@ def save_ga_id(parser_db, item):
         producer = parser_db.get_producer_by_id(producer_id=publication["producer_id"])
         identifiers = json.loads(producer["identifiers"])
         if "ga-id" not in identifiers:
-            logger.debug(f"add ga-id to producer {publication['producer_id']}")
+            logger.debug("Add ga-id to producer %d.", publication["producer_id"])
             parser_db.update_producer_identifiers(
                 producer_id=publication["producer_id"],
                 identifiers=json.dumps({**identifiers, "ga-id": ga_id}),
             )
         else:
             if not set(ga_id) <= set(identifiers["ga-id"]):
-                logger.debug(f"add ga-id to producer {publication['producer_id']}")
+                logger.debug("Add ga-id to producer %d.", publication["producer_id"])
                 parser_db.update_producer_identifiers(
                     producer_id=publication["producer_id"],
                     identifiers=json.dumps(
@@ -282,7 +282,7 @@ def save_ga_id(parser_db, item):
 def save_producer_active_dates(parser_db, item):
     publication = item.item
     if publication["published_at"] is not None:
-        logger.debug(f"set active dates for {publication['producer_id']}")
+        logger.debug("Set active dates for %d.", publication["producer_id"])
         parser_db.update_producer_active_dates(
             producer_id=publication["producer_id"],
             published_at=publication["published_at"],
@@ -364,10 +364,13 @@ def saver(parser_db, item):
 
         if not is_new_version(existing, publication):
             logger.debug(
-                f"skipping publication of article {article_snapshot} because content unchanged"
+                "Skipping publication of article %d because content unchanged.",
+                article_snapshot["article_id"],
             )
             return
-        logger.debug(f"saving publication of article {article_snapshot}")
+        logger.debug(
+            "Saving publication of article %d.", article_snapshot["article_id"]
+        )
         publication_id = parser_db.upsert_publication(
             {
                 **publication,

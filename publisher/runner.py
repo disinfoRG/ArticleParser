@@ -8,7 +8,7 @@ def processor(items, write, transformer):
     try:
         transformed = transformer(items)
     except Exception as e:
-        logger.error(e)
+        logger.error(traceback.format_exc())
     else:
         try:
             write(list(transformed))
@@ -23,7 +23,7 @@ def runner(from_db, getter, writer, transformer, batch_size=100):
         items = list(getter(from_db, offset=offset, limit=limit))
         if len(items) == 0:
             break
-        logger.debug(f"processing items {offset} to {offset + limit}")
+        logger.debug("Processing items %d to %d.", offset, offset + limit)
         processor(items=items, write=writer.write, transformer=transformer)
         offset += limit
     writer.close()
