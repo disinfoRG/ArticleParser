@@ -49,6 +49,8 @@ def main(args):
         )
     elif args.command == "show":
         producer = queries.get_producer_by_id_with_stats(producer_id=args.id)
+        for field in ["first_seen_at", "last_updated_at"]:
+            producer[field] = timestamp_to_string(producer[field])
         print(tabulate(producer.items()))
     else:
         raise RuntimeError(f"Unknown command '{args.command}'")
