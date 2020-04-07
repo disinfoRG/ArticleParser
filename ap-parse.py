@@ -156,7 +156,7 @@ def main(args):
         raise Exception(f"Unknown command {args.command}")
 
 
-if __name__ == "__main__":
+def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -198,5 +198,8 @@ if __name__ == "__main__":
     )
     pub_cmd.add_argument("--url", help="url the article to parse in news db", nargs="?")
 
-    args = parser.parse_args()
-    main(args)
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    main(parse_args())
