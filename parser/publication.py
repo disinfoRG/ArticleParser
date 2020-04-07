@@ -46,19 +46,17 @@ def snapshots_getter_by_parser_version(
 ):
     if site_id is None:
         pubs = parser_db.get_publications_by_parser_version(
-            version=version, offset=offset, limit=limit
+            version=version, limit=limit
         )
     else:
         pubs = parser_db.get_publications_by_parser_version_by_producer(
-            producer_id=site_id, version=version, offset=offset, limit=limit
+            producer_id=site_id, version=version, limit=limit
         )
     ids = list(set([p["article_id"] for p in pubs]))
     if len(ids) == 0:
         return []
 
-    return scraper.get_snapshots(
-        scraper_db, article_ids=ids, offset=offset, limit=limit
-    )
+    return scraper.get_snapshots(scraper_db, article_ids=ids)
 
 
 def snapshots_getter_by_site(scraper_db, site_id, offset=0, limit=1000):
