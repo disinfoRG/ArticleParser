@@ -48,10 +48,11 @@ def main(args):
             )
         )
     elif args.command == "show":
-        producer = queries.get_producer_by_id_with_stats(producer_id=args.id)
-        for field in ["first_seen_at", "last_updated_at"]:
-            producer[field] = timestamp_to_string(producer[field])
-        print(tabulate(producer.items()))
+        for producer_id in args.id:
+            producer = queries.get_producer_by_id_with_stats(producer_id=producer_id)
+            for field in ["first_seen_at", "last_updated_at"]:
+                producer[field] = timestamp_to_string(producer[field])
+            print(tabulate(producer.items()))
     else:
         raise RuntimeError(f"Unknown command '{args.command}'")
 
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     cmds.add_parser("list")
 
     show_cmd = cmds.add_parser("show")
-    show_cmd.add_argument("id", type=int, help="producer id")
+    show_cmd.add_argument("id", type=int, help="producer id", nargs="+")
 
     args = parser.parse_args()
     main(args)
