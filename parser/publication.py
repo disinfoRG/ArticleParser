@@ -134,6 +134,8 @@ def parse_published_at_from_jsonld(jsonld):
         ):
             if "datePublished" in jsonld:
                 return dateparser.parse(jsonld["datePublished"])
+        if "pubDate" in jsonld:
+            return dateparser.parse(jsonld["pubDate"])
         return None
 
     for item in jsonld:
