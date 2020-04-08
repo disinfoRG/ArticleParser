@@ -123,13 +123,47 @@ def parse_title(soups):
 def parse_published_at_from_jsonld(jsonld):
     def parse_(jsonld):
         if "@type" in jsonld and (
-            jsonld["@type"] in ["NewsArticle", "Article", "BlogPosting", "WebPage"]
+            jsonld["@type"]
+            in [
+                "NewsArticle",
+                "Article",
+                "BlogPosting",
+                "SocialMediaPosting",
+                "WebPage",
+            ]
         ):
             if "datePublished" in jsonld:
                 return dateparser.parse(jsonld["datePublished"])
         return None
 
     for item in jsonld:
+        r = parse_(item)
+        if r is not None:
+            return r
+    return None
+
+
+def parse_published_at_from_microdata(microdata):
+    def parse_(microdata):
+        if "type" in microdata and (
+            microdata["type"]
+            in [
+                f"http://schema.org/{c}"
+                for c in [
+                    "NewsArticle",
+                    "Article",
+                    "BlogPosting",
+                    "SocialMediaPosting",
+                    "WebPage",
+                ]
+            ]
+        ):
+            for prop in ["datePublished", "dateModified"]:
+                if prop in microdata["properties"]:
+                    return dateparser.parse(microdata["properties"][prop])
+        return None
+
+    for item in microdata:
         r = parse_(item)
         if r is not None:
             return r
@@ -168,6 +202,12 @@ def parse_published_at_from_opengraph(og):
 def parse_published_at(soups):
     published_at = None
 
+    ## <https://www.chinapress.com.my/>
+    tags = soups["body"].find_all(id="article_datetime")
+    if len(tags) > 0:
+        d = dateparser.parse(tags[0].get_text())
+        if d is not None:
+            published_at = d.timestamp()
     if "publishdate" in soups["meta-tags"]:
         d = dateparser.parse(soups["meta-tags"]["publishdate"])
         if d is not None:
@@ -192,6 +232,10 @@ def parse_published_at(soups):
         d = parse_published_at_from_jsonld(soups["metadata"]["json-ld"])
         if d is not None:
             published_at = d.timestamp()
+    if isinstance(soups["metadata"]["microdata"], list):
+        d = parse_published_at_from_microdata(soups["metadata"]["microdata"])
+        if d is not None:
+            published_at = d.timestamp()
     if "article:published_time" in soups["meta-tags"]:
         d = dateparser.parse(soups["meta-tags"]["article:published_time"])
         if d is not None:
@@ -205,7 +249,7 @@ def parse_soups(snapshot):
     body = BeautifulSoup(snapshot["raw_data"], "html.parser")
     summary = BeautifulSoup(doc.summary(), "html.parser")
     metatags = parse_meta_tags(body)
-    metadata = parse_metadata(body)
+    metadata = parse_metadata(snapshot["raw_data"])
     return {
         "doc": doc,
         "body": body,
