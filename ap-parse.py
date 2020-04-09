@@ -69,10 +69,10 @@ def parse_all_old_articles(scraper_db, parser_db, args):
     run_parser(
         data_getter=DbGetter(
             scraper_db,
-            publication.snapshots_getter_by_parser_version,
+            publication.snapshots_getter_by_parser_version(
+                parser_db=parser_db, site_id=args.site_id, version=version
+            ),
             parser_db=parser_db,
-            site_id=args.site_id,
-            version=version,
         ),
         data_saver=DbSaver(parser_db, publication.saver)
         if not args.dump
