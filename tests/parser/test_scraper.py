@@ -11,7 +11,7 @@ class TestScraperDb(t.TestCase):
             os.getenv("SCRAPER_DB_URL"),
             site_table_name="Site",
             article_table_name="Article",
-            snapshot_table_name="Snapshot",
+            snapshot_table_name="ArticleSnapshot",
         )
 
     @classmethod
@@ -22,7 +22,7 @@ class TestScraperDb(t.TestCase):
         self.assertTrue(self.db.connect)
 
     def testTable(self):
-        self.assertEqual("Snapshot", self.db("snapshot").name)
+        self.assertEqual("ArticleSnapshot", self.db("snapshot").name)
 
 
 class TestSDK(t.TestCase):
@@ -33,7 +33,7 @@ class TestSDK(t.TestCase):
             os.getenv("SCRAPER_DB_URL"),
             site_table_name="Site",
             article_table_name="Article",
-            snapshot_table_name="Snapshot",
+            snapshot_table_name="ArticleSnapshot",
         )
 
     @classmethod
