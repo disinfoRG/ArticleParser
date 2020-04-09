@@ -4,6 +4,7 @@ import datetime
 import json
 import dateparser
 import extruct
+import re
 
 import logging
 import readability
@@ -100,8 +101,8 @@ def parse_meta_tags(body):
     return {**meta_property, **meta_name, **meta_itemprop}
 
 
-def parse_metadata(body):
-    return extruct.extract(str(body))
+def parse_metadata(raw_data):
+    return extruct.extract(raw_data)
 
 
 def parse_external_links(soups):
@@ -208,45 +209,59 @@ def parse_published_at_from_opengraph(og):
     return None
 
 
+def parse_published_at_from_text(soups):
+    dt_pat = re.compile("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
+    m = dt_pat.match(str(soups["body"]))
+    if m is not None:
+        return dateparser.parse(m.group(1))
+    return None
+
+
+def parse_published_at_from_meta_tags(soups):
+    for tag_name in [
+        "article:published_time",
+        "datePublished",
+        "publishdate",
+        "pubdate",
+    ]:
+        if tag_name in soups["meta-tags"]:
+            d = dateparser.parse(soups["meta-tags"][tag_name])
+            if d is not None:
+                return d
+    return None
+
+
 def parse_published_at(soups):
     published_at = None
+
+    d = parse_published_at_from_meta_tags(soups)
+    if d is not None:
+        return d.timestamp()
+
+    d = parse_published_at_from_jsonld(soups["metadata"]["json-ld"])
+    if d is not None:
+        return d.timestamp()
+
+    d = parse_published_at_from_rdfa(soups["metadata"]["rdfa"])
+    if d is not None:
+        return d.timestamp()
+
+    d = parse_published_at_from_microdata(soups["metadata"]["microdata"])
+    if d is not None:
+        return d.timestamp()
+
+    d = parse_published_at_from_opengraph(soups["metadata"]["opengraph"])
+    if d is not None:
+        return d.timestamp()
+
+    d = parse_published_at_from_text(soups)
+    if d is not None:
+        published_at = d.timestamp()
 
     ## <https://www.chinapress.com.my/>
     tags = soups["body"].find_all(id="article_datetime")
     if len(tags) > 0:
         d = dateparser.parse(tags[0].get_text())
-        if d is not None:
-            published_at = d.timestamp()
-    if "publishdate" in soups["meta-tags"]:
-        d = dateparser.parse(soups["meta-tags"]["publishdate"])
-        if d is not None:
-            published_at = d.timestamp()
-    if "pubdate" in soups["meta-tags"]:
-        d = dateparser.parse(soups["meta-tags"]["pubdate"])
-        if d is not None:
-            published_at = d.timestamp()
-    if "datePublished" in soups["meta-tags"]:
-        d = dateparser.parse(soups["meta-tags"]["datePublished"])
-        if d is not None:
-            published_at = d.timestamp()
-    if isinstance(soups["metadata"]["rdfa"], list):
-        d = parse_published_at_from_rdfa(soups["metadata"]["rdfa"])
-        if d is not None:
-            published_at = d.timestamp()
-    if isinstance(soups["metadata"]["opengraph"], list):
-        d = parse_published_at_from_opengraph(soups["metadata"]["opengraph"])
-        if d is not None:
-            published_at = d.timestamp()
-    if isinstance(soups["metadata"]["json-ld"], list):
-        d = parse_published_at_from_jsonld(soups["metadata"]["json-ld"])
-        if d is not None:
-            published_at = d.timestamp()
-    if isinstance(soups["metadata"]["microdata"], list):
-        d = parse_published_at_from_microdata(soups["metadata"]["microdata"])
-        if d is not None:
-            published_at = d.timestamp()
-    if "article:published_time" in soups["meta-tags"]:
-        d = dateparser.parse(soups["meta-tags"]["article:published_time"])
         if d is not None:
             published_at = d.timestamp()
 
