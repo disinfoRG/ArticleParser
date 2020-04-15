@@ -17,6 +17,8 @@ beautifulsoup4 = "*"
 jsonlines = "*"
 dateparser = "*"
 extruct = "*"
+tabulate = "*"
+sqlalchemy = "*"
 
 [requires]
 python_version = "3.7"

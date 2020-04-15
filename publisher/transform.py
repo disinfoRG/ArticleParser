@@ -4,7 +4,7 @@ import datetime
 
 def transform_producer_json(producer):
     producer["id"] = producer.pop("producer_id")
-    for json_col in ["languages", "licenses", "followership"]:
+    for json_col in ["languages", "licenses", "followership", "identifiers"]:
         producer.update({json_col: json.loads(producer[json_col])})
     for datetime_col in ["first_seen_at", "last_updated_at"]:
         producer.update(
@@ -19,29 +19,13 @@ def transform_producer_json(producer):
     return producer
 
 
-def transform_producer_csv(producer):
-    producer = transform_producer_json(producer)
-    for list_col in ["languages", "licenses"]:
-        producer.update({list_col: ", ".join(producer[list_col])})
-    for dict_col in ["followership"]:
-        producer.update(
-            {
-                dict_col: ", ".join(
-                    [f"{key}: {value}" for key, value in producer[dict_col]]
-                )
-            }
-        )
-    return producer
-
-
 def producers(fmt="jsonl"):
     def transformer(rows):
         if fmt == "jsonl":
             for p in rows:
                 yield transform_producer_json(p)
         elif fmt == "csv":
-            for p in rows:
-                yield transform_producer_csv(p)
+            raise RuntimeError("Not implemented")
 
     return transformer
 
@@ -49,10 +33,11 @@ def producers(fmt="jsonl"):
 def transform_publication(publication, full_text=False):
     publication["id"] = publication.pop("publication_id")
     publication["text"] = publication.pop("publication_text")
+    del publication["tags"]
     if not full_text:
         publication["text"] = publication["text"][:280]
     del publication["metadata"]
-    for col in ["hashtags", "urls", "keywords", "tags"]:
+    for col in ["hashtags", "urls", "keywords", "comments"]:
         if publication[col] is not None:
             publication.update({col: json.loads(publication[col])})
     for datetime_col in ["published_at", "first_seen_at", "last_updated_at"]:
@@ -68,8 +53,12 @@ def transform_publication(publication, full_text=False):
 
 
 def publications(fmt="jsonl", full_text=False):
-    def transformer(rows):
-        for p in rows:
-            yield transform_publication(p, full_text=full_text)
+    if fmt == "jsonl":
 
-    return transformer
+        def transformer(rows):
+            for p in rows:
+                yield transform_publication(p, full_text=full_text)
+
+        return transformer
+    else:
+        raise RuntimeError("Not implemented")

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -5,21 +7,23 @@ load_dotenv()
 import os
 import datetime
 import pathlib
+import logging
 import pugsql
 from publisher.runner import runner
 from publisher import writer
 from publisher import transform
 
-queries = pugsql.module("queries/parser")
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logger = logging.getLogger(__name__)
+queries = pugsql.module("queries")
 queries.connect(os.getenv("DB_URL"))
 
 producer_fieldnames = [
     "id",
     "name",
-    "canonical_url",
+    "identifiers",
     "classification",
-    "languages",
-    "licenses",
+    "url",
     "first_seen_at",
     "last_updated_at",
     "followership",
@@ -27,19 +31,22 @@ producer_fieldnames = [
 
 publication_fieldnames = [
     "id",
+    "version",
+    "identifiers",
     "producer_id",
     "canonical_url",
     "title",
     "text",
-    "language",
-    "license",
+    "author",
     "published_at",
     "first_seen_at",
     "last_updated_at",
-    "hashtags",
     "urls",
+    "hashtags",
     "keywords",
-    "tags",
+    "reactions",
+    "comments",
+    "connect_from",
 ]
 
 
@@ -47,15 +54,29 @@ def producers_getter(db, offset=0, limit=1000):
     return db.get_all_producers(offset=offset, limit=limit)
 
 
-def publications_getter(published_at_range=None):
+def publications_getter(producer_id=None, published_at_range=None):
     def getter(db, offset=0, limit=1000):
         if published_at_range is not None:
             start, end = published_at_range
-            return db.get_publications_by_published_at(
-                start=start, end=end, limit=limit, offset=offset
-            )
+            if producer_id is not None:
+                return db.get_publications_by_producer_published_at(
+                    producer_id=producer_id,
+                    start=start,
+                    end=end,
+                    limit=limit,
+                    offset=offset,
+                )
+            else:
+                return db.get_publications_by_published_at(
+                    start=start, end=end, limit=limit, offset=offset
+                )
         else:
-            return db.get_all_publications(limit=limit, offset=offset)
+            if producer_id is not None:
+                return db.get_all_publications(
+                    producer_id=producer_id, limit=limit, offset=offset
+                )
+            else:
+                return db.get_all_publications(limit=limit, offset=offset)
 
     return getter
 
@@ -110,6 +131,10 @@ if __name__ == "__main__":
             default="-",
             help="save to file (or directory if group by is not 'all')",
         )
+        parser.add_argument("--producer", help="producer id of the publication data")
+        parser.add_argument(
+            "--full-text", action="store_true", help="publish full text"
+        )
         return parser.parse_args()
 
     args = parse_args()
@@ -129,20 +154,39 @@ if __name__ == "__main__":
             runner(
                 from_db=queries,
                 getter=publications_getter(),
-                transformer=transform.publications(fmt=args.format),
+                transformer=transform.publications(
+                    fmt=args.format, full_text=args.full_text
+                ),
                 writer=writer.fromformat(
                     args.format, filename=args.output, fieldnames=publication_fieldnames
                 ),
             )
         elif args.group_by == "published_day":
             outdir = pathlib.Path(args.output)
-            for day in day_range():
+            pubdate_range = (
+                queries.get_publication_published_at_range_by_producer(
+                    producer_id=args.producer
+                )
+                if args.producer
+                else queries.get_publication_published_at_range()
+            )
+            start = max(
+                datetime.datetime.fromtimestamp(pubdate_range["start"]),
+                datetime.datetime(2018, 1, 1, 0, 0, 0),
+            )
+            until = datetime.datetime.fromtimestamp(pubdate_range["end"])
+            for day in day_range(start=start, until=until):
                 start = day.timestamp()
+                logger.info(start)
                 end = start + 86400
                 runner(
                     from_db=queries,
-                    getter=publications_getter(published_at_range=(start, end)),
-                    transformer=transform.publications(fmt=args.format),
+                    getter=publications_getter(
+                        producer_id=args.producer, published_at_range=(start, end)
+                    ),
+                    transformer=transform.publications(
+                        fmt=args.format, full_text=args.full_text
+                    ),
                     writer=writer.fromformat(
                         args.format,
                         filename=(

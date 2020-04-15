@@ -1,26 +1,29 @@
 import logging
+import traceback
+
+logger = logging.getLogger(__name__)
 
 
 def processor(items, write, transformer):
     try:
         transformed = transformer(items)
     except Exception as e:
-        logging.error(e)
+        logger.error(traceback.format_exc())
     else:
         try:
             write(list(transformed))
         except Exception as e:
-            logging.error(e)
+            logger.error(traceback.format_exc())
 
 
-def runner(from_db, getter, writer, transformer, paginate_len=100):
-    offset, limit = 0, paginate_len
-    writer.open()
+def runner(from_db, getter, writer, transformer, batch_size=100):
+    offset, limit = 0, batch_size
     while True:
         items = list(getter(from_db, offset=offset, limit=limit))
         if len(items) == 0:
             break
-        logging.debug(f"processing items {offset} to {offset + limit}")
+        writer.open()
+        logger.debug("Processing items %d to %d.", offset, offset + limit)
         processor(items=items, write=writer.write, transformer=transformer)
         offset += limit
     writer.close()
