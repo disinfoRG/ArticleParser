@@ -7,11 +7,14 @@ load_dotenv()
 import os
 import datetime
 import pathlib
+import logging
 import pugsql
 from publisher.runner import runner
 from publisher import writer
 from publisher import transform
 
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logger = logging.getLogger(__name__)
 queries = pugsql.module("queries")
 queries.connect(os.getenv("DB_URL"))
 
@@ -160,8 +163,21 @@ if __name__ == "__main__":
             )
         elif args.group_by == "published_day":
             outdir = pathlib.Path(args.output)
-            for day in day_range():
+            pubdate_range = (
+                queries.get_publication_published_at_range_by_producer(
+                    producer_id=args.producer
+                )
+                if args.producer
+                else queries.get_publication_published_at_range()
+            )
+            start = max(
+                datetime.datetime.fromtimestamp(pubdate_range["start"]),
+                datetime.datetime(2018, 1, 1, 0, 0, 0),
+            )
+            until = datetime.datetime.fromtimestamp(pubdate_range["end"])
+            for day in day_range(start=start, until=until):
                 start = day.timestamp()
+                logger.info(start)
                 end = start + 86400
                 runner(
                     from_db=queries,

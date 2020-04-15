@@ -20,7 +20,7 @@ class BaseWriter:
             self.fh = open(self.filename, "w")
 
     def close(self):
-        if not self.to_stdout():
+        if not self.to_stdout() and self.fh is not None:
             self.fh.close()
 
 
