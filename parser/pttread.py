@@ -1,5 +1,6 @@
 import datetime
 import re
+import bs4
 from parser.gatrack import parse_ga_id
 
 ip_pattern = re.compile("((?:\d+\.){3}\d+)")
@@ -21,16 +22,9 @@ def parse_image_links(soups):
     ]
 
 
-def parse_datetime(text):
-    try:
-        return datetime.datetime.strptime(text, "%Y年%m月%d日").timestamp()
-    except:
-        return None
-
-
 def parse_comment(i, item):
     text = item.find(class_="push-content").text
-    text = text[len(": ") :]
+    text = text[len(": "):]
 
     ipdatetime = item.find(class_="push-ipdatetime").text.strip()
     m = ip_pattern.search(ipdatetime)
@@ -54,24 +48,27 @@ def parse_comment(i, item):
 def parse_publication(soups):
     stash = {}
     stash["title"] = soups["body"].find("h1").text
-    header_table = soups["body"].find("table", {"class": "head-tbl"})
+    stash["published_at"] = int(re.search(r"M.(\d+).", soups["snapshot"]["url"]).group(1))
 
+    header_table = soups["body"].find("table", {"class": "head-tbl"})
     for row in header_table.find_all('tr'):
         tag = row.find("th").text.strip()
         value = row.find("td").text.strip()
         if tag == "作者":
             stash["author"] = value
-        elif tag == "時間":
-            stash["published_at"] = parse_datetime(value)
+            break
 
     content = soups["body"].select("#main-content")[0]
     text = []
     connect_from = None
     for c in content.children:
-        try:
+        line = c
+        if isinstance(c, bs4.element.Tag):
             line = c.text
-        except AttributeError:
-            line = c
+            class_attr = c.attrs.get("class")
+            if class_attr and "push" in class_attr:
+                break
+
         if line.find("◆ From: ") == 0:
             connect_from = line[len("◆ From: "):]
             break
@@ -82,10 +79,7 @@ def parse_publication(soups):
         else:
             text.append(line)
 
-        if c.next_sibling.name == "div":
-            break
-
-    publication_text = "\n".join(text)
+    publication_text = "".join(text)
     external_links = parse_external_links(soups)
     image_links = parse_image_links(soups)
 
