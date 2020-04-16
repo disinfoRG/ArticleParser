@@ -6,9 +6,10 @@ ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
 
 def parse_external_links(soups):
+    main_content = soups["body"].select("#main-content")[0]
     return [
         x["href"]
-        for x in soups["summary"].find_all("a", href=lambda x: x)
+        for x in main_content.find_all("a", href=lambda x: x)
         if x["href"] != soups["snapshot"]["url"]
     ]
 
@@ -72,7 +73,7 @@ def parse_publication(soups):
         except AttributeError:
             line = c
         if line.find("◆ From: ") == 0:
-            connect_from = line[len("◆ From: ") :]
+            connect_from = line[len("◆ From: "):]
             break
         elif line.find("※ 發信站: 批踢踢實業坊(ptt.cc), 來自: ") == 0:
             m = ip_pattern.search(line)
