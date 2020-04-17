@@ -325,7 +325,7 @@ def save_ga_id(parser_db, item):
     publication = item.item
     if "ga-id" in publication["metadata"] and len(publication["metadata"]["ga-id"]) > 0:
         ga_id = publication["metadata"]["ga-id"]
-        producer = parser_db.get_producer_by_id(producer_id=publication["producer_id"])
+        producer = parser_db.get_producer(producer_id=publication["producer_id"])
         identifiers = json.loads(producer["identifiers"])
         if "ga-id" not in identifiers:
             logger.debug("Add ga-id to producer %d.", publication["producer_id"])
