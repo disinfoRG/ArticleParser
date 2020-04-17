@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 from readability import Document
 import datetime
 import json
+import uuid
 import dateparser
 import extruct
 import re
@@ -405,6 +406,12 @@ def is_new_version(existing, publication):
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
     with parser_db.transaction():
+        publication_id = parser_db.get_publication_id_by_article_id(
+            article_snapshot["article_id"]
+        )
+        if publication_id is None:
+            publication_id = str(uuid.uuid4()).replace("-", "")
+
         parser_db.upsert_publication_mapping(
             article_id=article_snapshot["article_id"],
             snapshot_at=article_snapshot["snapshot_at"],
