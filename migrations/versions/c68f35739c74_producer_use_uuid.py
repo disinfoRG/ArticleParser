@@ -45,6 +45,7 @@ def upgrade():
         "producer", "producer_id", autoincrement=False, existing_type=sa.Integer
     )
     op.execute("ALTER TABLE producer DROP PRIMARY KEY, ADD PRIMARY KEY (producer_uuid)")
+
     op.alter_column(
         "producer",
         "producer_id",
@@ -120,6 +121,7 @@ def downgrade():
         new_column_name="producer_id",
         existing_type=sa.Integer,
     )
+
     op.execute("ALTER TABLE producer DROP PRIMARY KEY, ADD PRIMARY KEY (producer_id)")
     op.alter_column(
         "producer", "producer_id", autoincrement=True, existing_type=sa.Integer
