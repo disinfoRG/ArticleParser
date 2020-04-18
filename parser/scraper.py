@@ -100,7 +100,7 @@ def get_snapshots(
     if site_id is not None:
         clauses.append(db("article").c.site_id == site_id)
     if url is not None:
-        clauses.append(db("article").c.url_hash == zlib.CRC32(url))
+        clauses.append(db("article").c.url_hash == zlib.crc32(url.encode("utf-8")))
         clauses.append(db("article").c.url == url)
     return db.execute(
         query_snapshot(db, limit=limit, offset=offset).where(sql.and_(*clauses))
