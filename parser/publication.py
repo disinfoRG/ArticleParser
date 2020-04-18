@@ -297,9 +297,8 @@ def process(snapshot):
         image_links = parse_image_links(soups)
         published_at = parse_published_at(soups)
         return {
-            "publication_id": soups["snapshot"]["article_id"],
             "version": soups["snapshot"]["snapshot_at"],
-            "producer_id": soups["snapshot"]["site_id"],
+            "site_id": soups["snapshot"]["site_id"],
             "canonical_url": soups["snapshot"]["url"],
             "published_at": published_at,
             "first_seen_at": soups["snapshot"]["first_seen_at"],
@@ -322,21 +321,20 @@ def process(snapshot):
         }
 
 
-def save_ga_id(parser_db, item):
-    publication = item.item
+def save_ga_id(parser_db, publication):
     if "ga-id" in publication["metadata"] and len(publication["metadata"]["ga-id"]) > 0:
         ga_id = publication["metadata"]["ga-id"]
         producer = parser_db.get_producer(producer_id=publication["producer_id"])
         identifiers = json.loads(producer["identifiers"])
         if "ga-id" not in identifiers:
-            logger.debug("Add ga-id to producer %d.", publication["producer_id"])
+            logger.debug("Add ga-id to producer %s.", publication["producer_id"])
             parser_db.update_producer_identifiers(
                 producer_id=publication["producer_id"],
                 identifiers=json.dumps({**identifiers, "ga-id": ga_id}),
             )
         else:
             if not set(ga_id) <= set(identifiers["ga-id"]):
-                logger.debug("Add ga-id to producer %d.", publication["producer_id"])
+                logger.debug("Add ga-id to producer %s.", publication["producer_id"])
                 parser_db.update_producer_identifiers(
                     producer_id=publication["producer_id"],
                     identifiers=json.dumps(
@@ -348,10 +346,9 @@ def save_ga_id(parser_db, item):
                 )
 
 
-def save_producer_active_dates(parser_db, item):
-    publication = item.item
+def save_producer_active_dates(parser_db, publication):
     if publication["published_at"] is not None:
-        logger.debug("Set active dates for %d.", publication["producer_id"])
+        logger.debug("Set active dates for %s.", publication["producer_id"])
         parser_db.update_producer_active_dates(
             producer_id=publication["producer_id"],
             published_at=publication["published_at"],
@@ -405,17 +402,52 @@ def is_new_version(existing, publication):
 
 def saver(parser_db, item):
     publication, article_snapshot = item.item, item.original
+    producer = parser_db.get_producer_by_site_id(site_id=publication["site_id"])
+    publication["producer_id"] = producer["producer_id"]
+    del publication["site_id"]
     with parser_db.transaction():
         publication_id = parser_db.get_publication_id_by_article_id(
-            article_snapshot["article_id"]
+            article_id=article_snapshot["article_id"]
         )
         if publication_id is None:
-            publication_id = str(uuid.uuid4()).replace("-", "")
+            existing_pub = parser_db.get_publication_by_article_id(
+                article_id=article_snapshot["article_id"]
+            )
+            if is_new_version(existing_pub, publication):
+                logger.debug(
+                    "Saving publication of article %d.", article_snapshot["article_id"]
+                )
+                publication_id = str(uuid.uuid4()).replace("-", "")
+                parser_db.insert_publication(
+                    **{
+                        **publication,
+                        **{
+                            k: json.dumps(publication[k], ensure_ascii=False)
+                            for k in [
+                                "urls",
+                                "hashtags",
+                                "keywords",
+                                "tags",
+                                "metadata",
+                                "comments",
+                            ]
+                            if k in publication
+                        },
+                    },
+                    publication_id=publication_id,
+                )
+            else:
+                logger.debug(
+                    "Skipping publication of article %d because content unchanged.",
+                    article_snapshot["article_id"],
+                )
+        else:
+            parser_db.update_publication(**publication, publication_id=publication_id)
 
         parser_db.upsert_publication_mapping(
             article_id=article_snapshot["article_id"],
             snapshot_at=article_snapshot["snapshot_at"],
-            publication_id=publication["publication_id"],
+            publication_id=publication_id,
             version=publication["version"],
             info=json.dumps(
                 {
@@ -429,40 +461,8 @@ def saver(parser_db, item):
             last_processed_article_id=article_snapshot["article_id"],
             last_processed_snapshot_at=article_snapshot["snapshot_at"],
         )
-        save_ga_id(parser_db, item)
-        save_producer_active_dates(parser_db, item)
-        existing = list(
-            parser_db.get_publication_by_article_id(
-                article_id=article_snapshot["article_id"]
-            )
-        )
-
-        if not is_new_version(existing, publication):
-            logger.debug(
-                "Skipping publication of article %d because content unchanged.",
-                article_snapshot["article_id"],
-            )
-            return
-        logger.debug(
-            "Saving publication of article %d.", article_snapshot["article_id"]
-        )
-        publication_id = parser_db.upsert_publication(
-            {
-                **publication,
-                **{
-                    k: json.dumps(publication[k], ensure_ascii=False)
-                    for k in [
-                        "urls",
-                        "hashtags",
-                        "keywords",
-                        "tags",
-                        "metadata",
-                        "comments",
-                    ]
-                    if k in publication
-                },
-            }
-        )
+        save_ga_id(parser_db, publication)
+        save_producer_active_dates(parser_db, publication)
 
 
 def update_parser_info(db):

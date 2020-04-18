@@ -5,7 +5,7 @@ SELECT
   HEX(producer_id) AS producer_id,
   canonical_url, title, publication_text, language, license,
   published_at, first_seen_at, last_updated_at,
-  hastags, urls, keywords, tags, metadata, comments,
+  hashtags, urls, keywords, tags, metadata, comments,
   author, connect_from
 FROM publication
 LIMIT :limit
@@ -18,7 +18,7 @@ SELECT
   HEX(producer_id) AS producer_id,
   canonical_url, title, publication_text, language, license,
   published_at, first_seen_at, last_updated_at,
-  hastags, urls, keywords, tags, metadata, comments,
+  hashtags, urls, keywords, tags, metadata, comments,
   author, connect_from
 FROM publication
 WHERE
@@ -33,7 +33,7 @@ SELECT
   HEX(producer_id) AS producer_id,
   canonical_url, title, publication_text, language, license,
   published_at, first_seen_at, last_updated_at,
-  hastags, urls, keywords, tags, metadata, comments,
+  hashtags, urls, keywords, tags, metadata, comments,
   author, connect_from
 FROM publication
 WHERE
@@ -61,7 +61,7 @@ SELECT
   HEX(producer_id) AS producer_id,
   canonical_url, title, publication_text, language, license,
   published_at, first_seen_at, last_updated_at,
-  hastags, urls, keywords, tags, metadata, comments,
+  hashtags, urls, keywords, tags, metadata, comments,
   author, connect_from
 FROM publication_mapping as PM
   JOIN publication as P
