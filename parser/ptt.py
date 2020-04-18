@@ -90,9 +90,8 @@ def parse_publication(soups):
     ga_id = parse_ga_id(soups)
 
     return {
-        "publication_id": soups["snapshot"]["article_id"],
         "version": soups["snapshot"]["snapshot_at"],
-        "producer_id": soups["snapshot"]["site_id"],
+        "site_id": soups["snapshot"]["site_id"],
         "canonical_url": soups["snapshot"]["url"],
         "published_at": stash["published_at"],
         "first_seen_at": soups["snapshot"]["first_seen_at"],
