@@ -7,6 +7,7 @@ load_dotenv()
 import os
 import argparse
 import logging
+from uuid import UUID
 import pugsql
 from parser.runner import run_parser, DbGetter, DbSaver, JsonSaver
 from parser import version
@@ -15,23 +16,6 @@ import parser.publication as publication
 import parser.scraper as scraper
 
 logger = logging.getLogger(__name__)
-
-
-def parse_all_sites(scraper_db, parser_db, args):
-    run_parser(
-        data_getter=DbGetter(scraper_db, producer.all_sites_getter),
-        data_saver=DbSaver(parser_db, producer.saver) if not args.dump else JsonSaver(),
-        processor=producer.process,
-        limit=args.limit,
-    )
-
-
-def parse_site(scraper_db, parser_db, site_id, args):
-    run_parser(
-        data_getter=DbGetter(scraper_db, producer.site_getter, site_id=site_id),
-        data_saver=DbSaver(parser_db, producer.saver) if not args.dump else JsonSaver(),
-        processor=producer.process,
-    )
 
 
 def parse_article(scraper_db, parser_db, article_id, args):
@@ -128,12 +112,28 @@ def main(args):
     scraper_db = get_scraper(parser_db, "ZeroScraper")
 
     if args.command == "producer":
+        data_saver = (
+            DbSaver(parser_db, producer.saver) if not args.dump else JsonSaver()
+        )
+        processor = producer.process
+        data_getter = None
         if args.id is not None:
-            parse_site(scraper_db, parser_db, args.id, args=args)
+            p = parser_db.get_producer(producer_id=args.id)
+            data_getter = DbGetter(
+                scraper_db, producer.site_getter, site_id=p["site_id"]
+            )
         elif args.site_id is not None:
-            parse_site(scraper_db, parser_db, args.site_id, args=args)
+            data_getter = DbGetter(
+                scraper_db, producer.site_getter, site_id=args.site_id
+            )
         else:
-            parse_all_sites(scraper_db, parser_db, args=args)
+            data_getter = DbGetter(scraper_db, producer.all_sites_getter)
+        run_parser(
+            data_getter=data_getter,
+            data_saver=data_saver,
+            processor=processor,
+            limit=args.limit,
+        )
     elif args.command == "publication":
         if args.id is not None:
             parse_article(scraper_db, parser_db, args.id, args=args)
@@ -170,9 +170,13 @@ def parse_args():
 
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
 
+    def uuid(value):
+        u = UUID(value)
+        return str(u).replace("-", "")
+
     prod_cmd = cmds.add_parser("producer", help="parses producers in parser db")
     prod_cmd.add_argument(
-        "id", type=int, help="id of the producer to parse in parser db", nargs="?"
+        "id", type=uuid, help="id of the producer to parse in parser db", nargs="?"
     )
     prod_cmd.add_argument(
         "--site-id", type=int, help="id of the site to parse in news db", nargs="?"

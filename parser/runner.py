@@ -58,7 +58,6 @@ def process_items(items, processor, data_saver):
             data_saver.save(Item(item=item, original=dict(original)))
             count += 1
         except Exception as e:
-            logger.error("Error processing item %d:", original["article_id"])
             logger.error(traceback.format_exc())
     return count
 

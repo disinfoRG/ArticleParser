@@ -1,5 +1,15 @@
+-- :name upsert_publication_mapping :insert
+INSERT INTO publication_mapping
+  (article_id, snapshot_at, publication_id, version, info)
+VALUES
+  (:article_id, :snapshot_at, UNHEX(:publication_id), :version, :info)
+ON DUPLICATE KEY UPDATE
+  info = :info
+
 -- :name get_publications_by_parser_version :many
-SELECT scraper_id, article_id, snapshot_at, publication_id, version, info FROM publication_mapping
+SELECT
+  scraper_id, article_id, snapshot_at, publication_id, version, info
+FROM publication_mapping
 WHERE
   JSON_EXTRACT(info, "$.parser.version") < :version
   -- XXX old version string
@@ -15,3 +25,4 @@ WHERE
   (JSON_EXTRACT(info, "$.parser.version") < :version
   -- XXX old version string
   OR JSON_EXTRACT(info, "$.parser.version") = "0.9.0")
+

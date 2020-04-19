@@ -8,6 +8,7 @@ import os
 import logging
 import datetime
 import argparse
+from uuid import UUID
 import pugsql
 from tabulate import tabulate
 
@@ -29,6 +30,7 @@ def main(args):
                 [
                     [
                         p["producer_id"],
+                        p["site_id"],
                         p["name"],
                         p["url"],
                         timestamp_to_string(p["first_seen_at"]),
@@ -39,6 +41,7 @@ def main(args):
                 ],
                 headers=[
                     "id",
+                    "site id",
                     "name",
                     "url",
                     "first seen at",
@@ -49,7 +52,7 @@ def main(args):
         )
     elif args.command == "show":
         for producer_id in args.id:
-            producer = queries.get_producer_by_id_with_stats(producer_id=producer_id)
+            producer = queries.get_producer_with_stats(producer_id=producer_id)
             for field in ["first_seen_at", "last_updated_at"]:
                 producer[field] = timestamp_to_string(producer[field])
             print(tabulate(producer.items()))
@@ -62,8 +65,12 @@ if __name__ == "__main__":
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
     cmds.add_parser("list")
 
+    def uuid(value):
+        u = UUID(value)
+        return str(u).replace("-", "")
+
     show_cmd = cmds.add_parser("show")
-    show_cmd.add_argument("id", type=int, help="producer id", nargs="+")
+    show_cmd.add_argument("id", type=uuid, help="producer id", nargs="+")
 
     args = parser.parse_args()
     main(args)
