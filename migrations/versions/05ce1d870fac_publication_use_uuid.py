@@ -39,7 +39,7 @@ def upgrade():
     op.create_index(
         "uq_publication_mapping_uuid",
         "publication_mapping",
-        ["publication_uuid"],
+        ["publication_uuid", "version"],
         unique=True,
     )
 
