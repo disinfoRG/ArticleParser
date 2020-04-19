@@ -24,13 +24,13 @@ def parse_image_links(soups):
 
 def parse_comment(i, item):
     text = item.find(class_="push-content").text
-    text = text[len(": "):]
+    text = text[len(": ") :]
 
     ipdatetime = item.find(class_="push-ipdatetime").text.strip()
     m = ip_pattern.search(ipdatetime)
 
     connect_from = m.group(1) if m is not None else None
-    published_at = ipdatetime[m.end(1):].strip() if m is not None else ipdatetime
+    published_at = ipdatetime[m.end(1) :].strip() if m is not None else ipdatetime
 
     result = {
         "id": i,
@@ -48,10 +48,12 @@ def parse_comment(i, item):
 def parse_publication(soups):
     stash = {}
     stash["title"] = soups["body"].find("h1").text
-    stash["published_at"] = int(re.search(r"M.(\d+).", soups["snapshot"]["url"]).group(1))
+    stash["published_at"] = int(
+        re.search(r"M.(\d+).", soups["snapshot"]["url"]).group(1)
+    )
 
     header_table = soups["body"].find("table", {"class": "head-tbl"})
-    for row in header_table.find_all('tr'):
+    for row in header_table.find_all("tr"):
         tag = row.find("th").text.strip()
         value = row.find("td").text.strip()
         if tag == "作者":
@@ -70,7 +72,7 @@ def parse_publication(soups):
                 break
 
         if line.find("◆ From: ") == 0:
-            connect_from = line[len("◆ From: "):]
+            connect_from = line[len("◆ From: ") :]
             break
         elif line.find("※ 發信站: 批踢踢實業坊(ptt.cc), 來自: ") == 0:
             m = ip_pattern.search(line)
@@ -91,9 +93,8 @@ def parse_publication(soups):
     ga_id = parse_ga_id(soups)
 
     return {
-        "publication_id": soups["snapshot"]["article_id"],
         "version": soups["snapshot"]["snapshot_at"],
-        "producer_id": soups["snapshot"]["site_id"],
+        "site_id": soups["snapshot"]["site_id"],
         "canonical_url": soups["snapshot"]["url"],
         "published_at": stash["published_at"],
         "first_seen_at": soups["snapshot"]["first_seen_at"],
