@@ -32,7 +32,7 @@ def upgrade():
     )
     op.execute(
         """DELETE FROM producer_mapping
-                WHERE producer_uuid = '\x00'"""
+                WHERE producer_uuid = UNHEX('00000000000000000000000000000000')"""
     )
     op.create_index(
         "uq_producer_mapping_uuid", "producer_mapping", ["producer_uuid"], unique=True
