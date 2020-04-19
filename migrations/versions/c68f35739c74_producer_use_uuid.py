@@ -30,6 +30,10 @@ def upgrade():
                JOIN producer ON producer_mapping.producer_id = producer.producer_id
                SET producer_mapping.producer_uuid = producer.producer_uuid"""
     )
+    op.execute(
+        """DELETE FROM producer_mapping
+                WHERE producer_uuid = '\x00'"""
+    )
     op.create_index(
         "uq_producer_mapping_uuid", "producer_mapping", ["producer_uuid"], unique=True
     )
