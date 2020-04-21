@@ -9,6 +9,7 @@ import argparse
 import logging
 from uuid import UUID
 import pugsql
+from functools import partial
 from parser.runner import run_parser, DbGetter, DbSaver, JsonSaver
 from parser import version
 import parser.producer as producer
@@ -28,7 +29,7 @@ def parse_article(scraper_db, parser_db, article_id, args):
         data_saver=DbSaver(parser_db, publication.saver)
         if not args.dump
         else JsonSaver(),
-        processor=publication.process,
+        processor=partial(publication.process, parser=args.parser),
         batch_size=1000,
         limit=args.limit,
     )
@@ -43,7 +44,7 @@ def parse_all_articles(scraper_db, parser_db, args):
         data_saver=DbSaver(parser_db, publication.saver)
         if not args.dump
         else JsonSaver(),
-        processor=publication.process,
+        processor=partial(publication.process, parser=args.parser),
         batch_size=1000,
         limit=args.limit,
     )
@@ -61,7 +62,7 @@ def parse_all_old_articles(scraper_db, parser_db, args):
         data_saver=DbSaver(parser_db, publication.saver)
         if not args.dump
         else JsonSaver(),
-        processor=publication.process,
+        processor=partial(publication.process, parser=args.parser),
         batch_size=1000,
         limit=args.limit,
     )
@@ -73,7 +74,7 @@ def parse_article_by_url(scraper_db, parser_db, url, args):
         data_saver=DbSaver(parser_db, publication.saver)
         if not args.dump
         else JsonSaver(),
-        processor=publication.process,
+        processor=partial(publication.process, parser=args.parser),
         batch_size=1000,
         limit=args.limit,
     )
@@ -87,7 +88,7 @@ def parse_article_by_site(scraper_db, parser_db, site_id, args):
         data_saver=DbSaver(parser_db, publication.saver)
         if not args.dump
         else JsonSaver(),
-        processor=publication.process,
+        processor=partial(publication.process, parser=args.parser),
         batch_size=1000,
         limit=args.limit,
     )
@@ -198,6 +199,7 @@ def parse_args():
         action="store_true",
         help="updates all publications parsed by older parsers",
     )
+    pub_cmd.add_argument("--parser", type=str, help="parser to use", default="default")
 
     return parser.parse_args()
 

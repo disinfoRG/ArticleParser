@@ -323,10 +323,13 @@ parsers = {
 
 def process(snapshot: Snapshot, parser: str = "default"):
     soups = parse_soups(snapshot)
-    if soups.snapshot.article_type == "PTT":
-        return parser.ptt.parse_publication(soups)
+    if parser == "default":
+        if soups.snapshot.article_type == "PTT":
+            return parsers["ptt"](soups)
+        else:
+            return parsers["default"](soups)
     else:
-        return parse_publication(soups)
+        return parsers[parser](soups)
 
 
 def save_ga_id(parser_db, publication):
