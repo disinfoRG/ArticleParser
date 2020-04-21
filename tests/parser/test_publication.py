@@ -9,7 +9,7 @@ def load_snapshot(filename):
         return {"raw_data": f.read()}
 
 
-class TestParseGAID(t.TestCase):
+class ParseGAIDTest(t.TestCase):
     cases = [
         {"f": "snapshot000001.html", "ga-id": []},
         {"f": "snapshot000002.html", "ga-id": ["UA-135651881-1"]},
@@ -69,7 +69,7 @@ class TestParseGAID(t.TestCase):
                 self.fail(f"{e}: {case}")
 
 
-class TestParseFBID(t.TestCase):
+class ParseFBIDTest(t.TestCase):
     cases = [
         {"f": "snapshot000001.html", "fb:app_id": ""},
         {"f": "snapshot000002.html", "fb:app_id": ""},
@@ -132,7 +132,7 @@ class TestParseFBID(t.TestCase):
                 self.fail(f"{e}: {case}")
 
 
-class TestPublishedAt(t.TestCase):
+class PublishedAtTest(t.TestCase):
     cases = [
         {"f": "snapshot000001.html", "published_at": 1585140802},
         {"f": "snapshot000002.html", "published_at": 1583486880},
