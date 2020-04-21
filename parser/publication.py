@@ -212,7 +212,7 @@ def parse_published_at_from_opengraph(og):
 
 def parse_published_at_from_text(soups):
     dt_pat = re.compile("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
-    m = dt_pat.match(str(soups["body"]))
+    m = dt_pat.search(str(soups["body"]))
     if m is not None:
         return dateparser.parse(m.group(1))
     return None
