@@ -11,6 +11,7 @@ import logging
 import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
+import parser.pttread
 import parser.scraper as scraper
 from . import version, Soups, Snapshot
 
@@ -285,36 +286,47 @@ def parse_soups(snapshot: Snapshot) -> Soups:
     )
 
 
-def process(snapshot: Snapshot):
+def parse_publication(soups: Soups):
+    ga_id = parse_ga_id(soups)
+    title = parse_title(soups)
+    text = parse_text(soups)
+    external_links = parse_external_links(soups)
+    image_links = parse_image_links(soups)
+    published_at = parse_published_at(soups)
+    return {
+        "version": soups.snapshot.snapshot_at,
+        "site_id": soups.snapshot.site_id,
+        "canonical_url": soups.snapshot.url,
+        "published_at": published_at,
+        "first_seen_at": soups.snapshot.first_seen_at,
+        "last_updated_at": soups.snapshot.last_updated_at,
+        "title": title,
+        "publication_text": text,
+        "author": None,
+        "urls": external_links,
+        "image_urls": image_links,
+        "hashtags": [],
+        "keywords": [],
+        "tags": [],
+        "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
+        "comments": [],
+        "connect_from": None,
+    }
+
+
+parsers = {
+    "ptt": parser.ptt.parse_publication,
+    "pttread": parser.pttread.parse_publication,
+    "default": parse_publication,
+}
+
+
+def process(snapshot: Snapshot, parser: str = "default"):
     soups = parse_soups(snapshot)
     if soups.snapshot.article_type == "PTT":
         return parser.ptt.parse_publication(soups)
     else:
-        ga_id = parse_ga_id(soups)
-        title = parse_title(soups)
-        text = parse_text(soups)
-        external_links = parse_external_links(soups)
-        image_links = parse_image_links(soups)
-        published_at = parse_published_at(soups)
-        return {
-            "version": soups.snapshot.snapshot_at,
-            "site_id": soups.snapshot.site_id,
-            "canonical_url": soups.snapshot.url,
-            "published_at": published_at,
-            "first_seen_at": soups.snapshot.first_seen_at,
-            "last_updated_at": soups.snapshot.last_updated_at,
-            "title": title,
-            "publication_text": text,
-            "author": None,
-            "urls": external_links,
-            "image_urls": image_links,
-            "hashtags": [],
-            "keywords": [],
-            "tags": [],
-            "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
-            "comments": [],
-            "connect_from": None,
-        }
+        return parse_publication(soups)
 
 
 def save_ga_id(parser_db, publication):
