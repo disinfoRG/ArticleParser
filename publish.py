@@ -176,13 +176,14 @@ if __name__ == "__main__":
             )
             until = datetime.datetime.fromtimestamp(pubdate_range["end"])
             for day in day_range(start=start, until=until):
-                start = day.timestamp()
-                logger.info(start)
-                end = start + 86400
+                day_start = day.timestamp()
+                logger.info(day_start)
+                day_end = day_start + 86400
                 runner(
                     from_db=queries,
                     getter=publications_getter(
-                        producer_id=args.producer, published_at_range=(start, end)
+                        producer_id=args.producer,
+                        published_at_range=(day_start, day_end),
                     ),
                     transformer=transform.publications(
                         fmt=args.format, full_text=args.full_text
