@@ -123,8 +123,8 @@ class ParseFBIDTest(t.TestCase):
             try:
                 snapshot = load_snapshot(case["f"])
                 soups = P.parse_soups(snapshot)
-                if "fb:app_id" in soups["meta-tags"]:
-                    fb_app_id = soups["meta-tags"]["fb:app_id"]
+                if "fb:app_id" in soups["metatags"]:
+                    fb_app_id = soups["metatags"]["fb:app_id"]
                     self.assertEqual(case["fb:app_id"], fb_app_id, case["f"])
                 else:
                     self.assertEqual(case["fb:app_id"], "", case["f"])

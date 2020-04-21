@@ -1,4 +1,5 @@
 import datetime
+from . import Soups
 import re
 import bs4
 from parser.gatrack import parse_ga_id
@@ -6,7 +7,7 @@ from parser.gatrack import parse_ga_id
 ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
 
-def parse_external_links(soups):
+def parse_external_links(soups: Soups):
     main_content = soups["body"].select("#main-content")[0]
     return [
         x["href"]
@@ -15,7 +16,7 @@ def parse_external_links(soups):
     ]
 
 
-def parse_image_links(soups):
+def parse_image_links(soups: Soups):
     return [
         x.get("data-src", x.get("src", x.get("data-original", "")))
         for x in soups["summary"].find_all("img")
@@ -45,7 +46,7 @@ def parse_comment(i, item):
     return result
 
 
-def parse_publication(soups):
+def parse_publication(soups: Soups):
     stash = {}
     stash["title"] = soups["body"].find("h1").text
     stash["published_at"] = int(
@@ -108,7 +109,7 @@ def parse_publication(soups):
         "keywords": [],
         "tags": [],
         "metadata": {
-            "meta-tags": soups["meta-tags"],
+            "metatags": soups["metatags"],
             **soups["metadata"],
             "ga-id": ga_id,
         },

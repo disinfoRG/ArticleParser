@@ -1,22 +1,23 @@
 import datetime
 import re
 from parser.gatrack import parse_ga_id
+from . import Soups
 
 ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
 
-def parse_external_links(soups):
+def parse_external_links(soups: Soups):
     return [
         x["href"]
-        for x in soups["summary"].find_all("a", href=lambda x: x)
-        if x["href"] != soups["snapshot"]["url"]
+        for x in soups.summary.find_all("a", href=lambda x: x)
+        if x["href"] != soups.snapshot["url"]
     ]
 
 
-def parse_image_links(soups):
+def parse_image_links(soups: Soups):
     return [
         x.get("data-src", x.get("src", x.get("data-original", "")))
-        for x in soups["summary"].find_all("img")
+        for x in soups.summary.find_all("img")
     ]
 
 
@@ -50,10 +51,10 @@ def parse_comment(i, item):
     return result
 
 
-def parse_publication(soups):
+def parse_publication(soups: Soups):
     stash = {}
 
-    for line in soups["body"].select(".article-metaline"):
+    for line in soups.body.select(".article-metaline"):
         tag = line.find(class_="article-meta-tag").text
         value = line.find(class_="article-meta-value").text
         if tag == "作者":
@@ -63,7 +64,7 @@ def parse_publication(soups):
         elif tag == "時間":
             stash["published_at"] = parse_datetime(value)
 
-    content = soups["body"].select("#main-content")[0]
+    content = soups.body.select("#main-content")[0]
     children = list(content.stripped_strings)
     board = children[3]
     text = []
@@ -84,18 +85,18 @@ def parse_publication(soups):
 
     comments = [
         parse_comment(i, item)
-        for i, item in enumerate(soups["body"].select("#main-content .push"))
+        for i, item in enumerate(soups.body.select("#main-content .push"))
     ]
 
     ga_id = parse_ga_id(soups)
 
     return {
-        "version": soups["snapshot"]["snapshot_at"],
-        "site_id": soups["snapshot"]["site_id"],
-        "canonical_url": soups["snapshot"]["url"],
+        "version": soups.snapshot["snapshot_at"],
+        "site_id": soups.snapshot["site_id"],
+        "canonical_url": soups.snapshot["url"],
         "published_at": stash["published_at"],
-        "first_seen_at": soups["snapshot"]["first_seen_at"],
-        "last_updated_at": soups["snapshot"]["last_updated_at"],
+        "first_seen_at": soups.snapshot["first_seen_at"],
+        "last_updated_at": soups.snapshot["last_updated_at"],
         "title": stash["title"],
         "publication_text": publication_text,
         "author": stash["author"],
@@ -104,11 +105,7 @@ def parse_publication(soups):
         "hashtags": [],
         "keywords": [],
         "tags": [],
-        "metadata": {
-            "meta-tags": soups["meta-tags"],
-            **soups["metadata"],
-            "ga-id": ga_id,
-        },
+        "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id,},
         "comments": comments,
         "connect_from": connect_from,
     }
