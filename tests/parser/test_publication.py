@@ -1,12 +1,21 @@
 import unittest as t
 from pathlib import Path
+from parser import Snapshot
 import parser.publication as P
 
 
 def load_snapshot(filename):
     file_path = Path(__file__).parent / "snapshots" / filename
     with file_path.open("r") as f:
-        return {"raw_data": f.read()}
+        return Snapshot(
+            site_id=0,
+            url="",
+            snapshot_at=0,
+            first_seen_at=0,
+            last_updated_at=0,
+            raw_data=f.read(),
+            article_type="Article",
+        )
 
 
 class ParseGAIDTest(t.TestCase):
@@ -123,8 +132,8 @@ class ParseFBIDTest(t.TestCase):
             try:
                 snapshot = load_snapshot(case["f"])
                 soups = P.parse_soups(snapshot)
-                if "fb:app_id" in soups["metatags"]:
-                    fb_app_id = soups["metatags"]["fb:app_id"]
+                if "fb:app_id" in soups.metatags:
+                    fb_app_id = soups.metatags["fb:app_id"]
                     self.assertEqual(case["fb:app_id"], fb_app_id, case["f"])
                 else:
                     self.assertEqual(case["fb:app_id"], "", case["f"])
