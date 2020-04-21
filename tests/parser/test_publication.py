@@ -6,14 +6,14 @@ import parser.publication as P
 
 def load_snapshot(filename):
     file_path = Path(__file__).parent / "snapshots" / filename
-    with file_path.open("r") as f:
+    with file_path.open("r") as fh:
         return Snapshot(
             site_id=0,
             url="",
             snapshot_at=0,
             first_seen_at=0,
             last_updated_at=0,
-            raw_data=f.read(),
+            raw_data=fh.read(),
             article_type="Article",
         )
 
