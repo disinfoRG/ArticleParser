@@ -1,15 +1,24 @@
 import unittest as t
 from pathlib import Path
+from parser import Snapshot
 import parser.publication as P
 
 
 def load_snapshot(filename):
     file_path = Path(__file__).parent / "snapshots" / filename
-    with file_path.open("r") as f:
-        return {"raw_data": f.read()}
+    with file_path.open("r") as fh:
+        return Snapshot(
+            site_id=0,
+            url="",
+            snapshot_at=0,
+            first_seen_at=0,
+            last_updated_at=0,
+            raw_data=fh.read(),
+            article_type="Article",
+        )
 
 
-class TestParseGAID(t.TestCase):
+class ParseGAIDTest(t.TestCase):
     cases = [
         {"f": "snapshot000001.html", "ga-id": []},
         {"f": "snapshot000002.html", "ga-id": ["UA-135651881-1"]},
@@ -69,7 +78,7 @@ class TestParseGAID(t.TestCase):
                 self.fail(f"{e}: {case}")
 
 
-class TestParseFBID(t.TestCase):
+class ParseFBIDTest(t.TestCase):
     cases = [
         {"f": "snapshot000001.html", "fb:app_id": ""},
         {"f": "snapshot000002.html", "fb:app_id": ""},
@@ -123,8 +132,8 @@ class TestParseFBID(t.TestCase):
             try:
                 snapshot = load_snapshot(case["f"])
                 soups = P.parse_soups(snapshot)
-                if "fb:app_id" in soups["meta-tags"]:
-                    fb_app_id = soups["meta-tags"]["fb:app_id"]
+                if "fb:app_id" in soups.metatags:
+                    fb_app_id = soups.metatags["fb:app_id"]
                     self.assertEqual(case["fb:app_id"], fb_app_id, case["f"])
                 else:
                     self.assertEqual(case["fb:app_id"], "", case["f"])
@@ -132,7 +141,7 @@ class TestParseFBID(t.TestCase):
                 self.fail(f"{e}: {case}")
 
 
-class TestPublishedAt(t.TestCase):
+class PublishedAtTest(t.TestCase):
     cases = [
         {"f": "snapshot000001.html", "published_at": 1585140802},
         {"f": "snapshot000002.html", "published_at": 1583486880},

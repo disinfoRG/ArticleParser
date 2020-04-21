@@ -1,15 +1,17 @@
 import datetime
+from . import Soups
 import re
+import bs4
 from parser.gatrack import parse_ga_id
-from . import Soups, Snapshot
 
 ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
 
 def parse_external_links(soups: Soups):
+    main_content = soups.body.select("#main-content")[0]
     return [
         x["href"]
-        for x in soups.summary.find_all("a", href=lambda x: x)
+        for x in main_content.find_all("a", href=lambda x: x)
         if x["href"] != soups.snapshot.url
     ]
 
@@ -19,13 +21,6 @@ def parse_image_links(soups: Soups):
         x.get("data-src", x.get("src", x.get("data-original", "")))
         for x in soups.summary.find_all("img")
     ]
-
-
-def parse_datetime(text):
-    try:
-        return datetime.datetime.strptime(text, "%a %b %d %H:%M:%S %Y").timestamp()
-    except:
-        return None
 
 
 def parse_comment(i, item):
@@ -53,23 +48,32 @@ def parse_comment(i, item):
 
 def parse_publication(soups: Soups):
     stash = {}
+    stash["title"] = soups.body.find("h1").text
+    m = re.search(r"M.(\d+).", soups.snapshot.url)
+    if m is None:
+        stash["published_at"] = None
+    else:
+        stash["published_at"] = int(m.group(1))
 
-    for line in soups.body.select(".article-metaline"):
-        tag = line.find(class_="article-meta-tag").text
-        value = line.find(class_="article-meta-value").text
+    header_table = soups.body.find("table", {"class": "head-tbl"})
+    for row in header_table.find_all("tr"):
+        tag = row.find("th").text.strip()
+        value = row.find("td").text.strip()
         if tag == "作者":
             stash["author"] = value
-        elif tag == "標題":
-            stash["title"] = value
-        elif tag == "時間":
-            stash["published_at"] = parse_datetime(value)
+            break
 
     content = soups.body.select("#main-content")[0]
-    children = list(content.stripped_strings)
-    board = children[3]
     text = []
     connect_from = None
-    for line in children[8:]:
+    for c in content.children:
+        line = c
+        if isinstance(c, bs4.element.Tag):
+            line = c.text
+            class_attr = c.attrs.get("class")
+            if class_attr and "push" in class_attr:
+                break
+
         if line.find("◆ From: ") == 0:
             connect_from = line[len("◆ From: ") :]
             break
@@ -79,7 +83,8 @@ def parse_publication(soups: Soups):
             break
         else:
             text.append(line)
-    publication_text = "\n".join(text)
+
+    publication_text = "".join(text)
     external_links = parse_external_links(soups)
     image_links = parse_image_links(soups)
 
@@ -105,7 +110,7 @@ def parse_publication(soups: Soups):
         "hashtags": [],
         "keywords": [],
         "tags": [],
-        "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id,},
+        "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
         "comments": comments,
         "connect_from": connect_from,
     }

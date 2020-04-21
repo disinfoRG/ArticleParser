@@ -12,7 +12,7 @@ import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
 import parser.scraper as scraper
-from . import version
+from . import version, Soups, Snapshot
 
 name = "parser.publication"
 
@@ -106,27 +106,27 @@ def parse_metadata(raw_data):
     return extruct.extract(raw_data)
 
 
-def parse_external_links(soups):
+def parse_external_links(soups: Soups):
     return [
         x["href"]
-        for x in soups["summary"].find_all("a", href=lambda x: x)
-        if x["href"] != soups["snapshot"]["url"]
+        for x in soups.summary.find_all("a", href=lambda x: x)
+        if x["href"] != soups.snapshot.url
     ]
 
 
-def parse_image_links(soups):
+def parse_image_links(soups: Soups):
     return [
         x.get("data-src", x.get("src", x.get("data-original", "")))
-        for x in soups["summary"].find_all("img")
+        for x in soups.summary.find_all("img")
     ]
 
 
-def parse_text(soups):
-    return " ".join([" ".join(x.text.split()) for x in soups["summary"].find_all("p")])
+def parse_text(soups: Soups):
+    return " ".join([" ".join(x.text.split()) for x in soups.summary.find_all("p")])
 
 
-def parse_title(soups):
-    return soups["doc"].title()
+def parse_title(soups: Soups):
+    return soups.doc.title()
 
 
 def parse_published_at_from_jsonld(jsonld):
@@ -210,48 +210,48 @@ def parse_published_at_from_opengraph(og):
     return None
 
 
-def parse_published_at_from_text(soups):
+def parse_published_at_from_text(soups: Soups):
     dt_pat = re.compile("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
-    m = dt_pat.search(str(soups["body"]))
+    m = dt_pat.search(str(soups.body))
     if m is not None:
         return dateparser.parse(m.group(1))
     return None
 
 
-def parse_published_at_from_meta_tags(soups):
+def parse_published_at_from_meta_tags(soups: Soups):
     for tag_name in [
         "article:published_time",
         "datePublished",
         "publishdate",
         "pubdate",
     ]:
-        if tag_name in soups["meta-tags"]:
-            d = dateparser.parse(soups["meta-tags"][tag_name])
+        if tag_name in soups.metatags:
+            d = dateparser.parse(soups.metatags[tag_name])
             if d is not None:
                 return d
     return None
 
 
-def parse_published_at(soups):
+def parse_published_at(soups: Soups):
     published_at = None
 
     d = parse_published_at_from_meta_tags(soups)
     if d is not None:
         return d.timestamp()
 
-    d = parse_published_at_from_jsonld(soups["metadata"]["json-ld"])
+    d = parse_published_at_from_jsonld(soups.metadata["json-ld"])
     if d is not None:
         return d.timestamp()
 
-    d = parse_published_at_from_rdfa(soups["metadata"]["rdfa"])
+    d = parse_published_at_from_rdfa(soups.metadata["rdfa"])
     if d is not None:
         return d.timestamp()
 
-    d = parse_published_at_from_microdata(soups["metadata"]["microdata"])
+    d = parse_published_at_from_microdata(soups.metadata["microdata"])
     if d is not None:
         return d.timestamp()
 
-    d = parse_published_at_from_opengraph(soups["metadata"]["opengraph"])
+    d = parse_published_at_from_opengraph(soups.metadata["opengraph"])
     if d is not None:
         return d.timestamp()
 
@@ -260,7 +260,7 @@ def parse_published_at(soups):
         published_at = d.timestamp()
 
     ## <https://www.chinapress.com.my/>
-    tags = soups["body"].find_all(id="article_datetime")
+    tags = soups.body.find_all(id="article_datetime")
     if len(tags) > 0:
         d = dateparser.parse(tags[0].get_text())
         if d is not None:
@@ -269,25 +269,25 @@ def parse_published_at(soups):
     return published_at
 
 
-def parse_soups(snapshot):
-    doc = Document(snapshot["raw_data"])
-    body = BeautifulSoup(snapshot["raw_data"], "html.parser")
+def parse_soups(snapshot: Snapshot) -> Soups:
+    doc = Document(snapshot.raw_data)
+    body = BeautifulSoup(snapshot.raw_data, "html.parser")
     summary = BeautifulSoup(doc.summary(), "html.parser")
     metatags = parse_meta_tags(body)
-    metadata = parse_metadata(snapshot["raw_data"])
-    return {
-        "doc": doc,
-        "body": body,
-        "summary": summary,
-        "meta-tags": metatags,
-        "metadata": metadata,
-        "snapshot": snapshot,
-    }
+    metadata = parse_metadata(snapshot.raw_data)
+    return Soups(
+        doc=doc,
+        body=body,
+        summary=summary,
+        metatags=metatags,
+        metadata=metadata,
+        snapshot=snapshot,
+    )
 
 
-def process(snapshot):
+def process(snapshot: Snapshot):
     soups = parse_soups(snapshot)
-    if soups["snapshot"]["article_type"] == "PTT":
+    if soups.snapshot.article_type == "PTT":
         return parser.ptt.parse_publication(soups)
     else:
         ga_id = parse_ga_id(soups)
@@ -297,12 +297,12 @@ def process(snapshot):
         image_links = parse_image_links(soups)
         published_at = parse_published_at(soups)
         return {
-            "version": soups["snapshot"]["snapshot_at"],
-            "site_id": soups["snapshot"]["site_id"],
-            "canonical_url": soups["snapshot"]["url"],
+            "version": soups.snapshot.snapshot_at,
+            "site_id": soups.snapshot.site_id,
+            "canonical_url": soups.snapshot.url,
             "published_at": published_at,
-            "first_seen_at": soups["snapshot"]["first_seen_at"],
-            "last_updated_at": soups["snapshot"]["last_updated_at"],
+            "first_seen_at": soups.snapshot.first_seen_at,
+            "last_updated_at": soups.snapshot.last_updated_at,
             "title": title,
             "publication_text": text,
             "author": None,
@@ -311,11 +311,7 @@ def process(snapshot):
             "hashtags": [],
             "keywords": [],
             "tags": [],
-            "metadata": {
-                "meta-tags": soups["meta-tags"],
-                **soups["metadata"],
-                "ga-id": ga_id,
-            },
+            "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
             "comments": [],
             "connect_from": None,
         }

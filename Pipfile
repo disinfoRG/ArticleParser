@@ -6,6 +6,7 @@ verify_ssl = true
 [dev-packages]
 pre-commit = "*"
 black = "==19.3b0"
+mypy = "*"
 
 [packages]
 pymysql = "*"
