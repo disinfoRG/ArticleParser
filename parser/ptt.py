@@ -1,7 +1,7 @@
 import datetime
 import re
 from parser.gatrack import parse_ga_id
-from . import Soups
+from . import Soups, Snapshot
 
 ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
@@ -10,7 +10,7 @@ def parse_external_links(soups: Soups):
     return [
         x["href"]
         for x in soups.summary.find_all("a", href=lambda x: x)
-        if x["href"] != soups.snapshot["url"]
+        if x["href"] != soups.snapshot.url
     ]
 
 
@@ -91,12 +91,12 @@ def parse_publication(soups: Soups):
     ga_id = parse_ga_id(soups)
 
     return {
-        "version": soups.snapshot["snapshot_at"],
-        "site_id": soups.snapshot["site_id"],
-        "canonical_url": soups.snapshot["url"],
+        "version": soups.snapshot.snapshot_at,
+        "site_id": soups.snapshot.site_id,
+        "canonical_url": soups.snapshot.url,
         "published_at": stash["published_at"],
-        "first_seen_at": soups.snapshot["first_seen_at"],
-        "last_updated_at": soups.snapshot["last_updated_at"],
+        "first_seen_at": soups.snapshot.first_seen_at,
+        "last_updated_at": soups.snapshot.last_updated_at,
         "title": stash["title"],
         "publication_text": publication_text,
         "author": stash["author"],

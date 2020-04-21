@@ -12,7 +12,7 @@ import readability
 from parser.gatrack import parse_ga_id
 import parser.ptt
 import parser.scraper as scraper
-from . import version, Soups
+from . import version, Soups, Snapshot
 
 name = "parser.publication"
 
@@ -110,7 +110,7 @@ def parse_external_links(soups: Soups):
     return [
         x["href"]
         for x in soups.summary.find_all("a", href=lambda x: x)
-        if x["href"] != soups.snapshot["url"]
+        if x["href"] != soups.snapshot.url
     ]
 
 
@@ -269,12 +269,12 @@ def parse_published_at(soups: Soups):
     return published_at
 
 
-def parse_soups(snapshot) -> Soups:
-    doc = Document(snapshot["raw_data"])
-    body = BeautifulSoup(snapshot["raw_data"], "html.parser")
+def parse_soups(snapshot: Snapshot) -> Soups:
+    doc = Document(snapshot.raw_data)
+    body = BeautifulSoup(snapshot.raw_data, "html.parser")
     summary = BeautifulSoup(doc.summary(), "html.parser")
     metatags = parse_meta_tags(body)
-    metadata = parse_metadata(snapshot["raw_data"])
+    metadata = parse_metadata(snapshot.raw_data)
     return Soups(
         doc=doc,
         body=body,
@@ -285,9 +285,9 @@ def parse_soups(snapshot) -> Soups:
     )
 
 
-def process(snapshot):
+def process(snapshot: Snapshot):
     soups = parse_soups(snapshot)
-    if soups.snapshot["article_type"] == "PTT":
+    if soups.snapshot.article_type == "PTT":
         return parser.ptt.parse_publication(soups)
     else:
         ga_id = parse_ga_id(soups)
@@ -297,12 +297,12 @@ def process(snapshot):
         image_links = parse_image_links(soups)
         published_at = parse_published_at(soups)
         return {
-            "version": soups.snapshot["snapshot_at"],
-            "site_id": soups.snapshot["site_id"],
-            "canonical_url": soups.snapshot["url"],
+            "version": soups.snapshot.snapshot_at,
+            "site_id": soups.snapshot.site_id,
+            "canonical_url": soups.snapshot.url,
             "published_at": published_at,
-            "first_seen_at": soups.snapshot["first_seen_at"],
-            "last_updated_at": soups.snapshot["last_updated_at"],
+            "first_seen_at": soups.snapshot.first_seen_at,
+            "last_updated_at": soups.snapshot.last_updated_at,
             "title": title,
             "publication_text": text,
             "author": None,
