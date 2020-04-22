@@ -58,4 +58,4 @@ def fromformat(fmt, **args):
     elif fmt == "csv":
         return CSV(filename=args["filename"], fieldnames=args["fieldnames"])
     else:
-        raise f"Unknown format '{fmt}'"
+        raise Exception(f"Unknown format '{fmt}'")
