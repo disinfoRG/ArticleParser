@@ -1,9 +1,10 @@
 import datetime
 import re
-from parser.gatrack import parse_ga_id
+from .gatrack import parse_ga_id
 from . import Soups, Snapshot
 
 ip_pattern = re.compile("((?:\d+\.){3}\d+)")
+author_pattern = re.compile("^(.*) \((.*?)\)$")
 
 
 def parse_external_links(soups: Soups):
@@ -58,7 +59,13 @@ def parse_publication(soups: Soups):
         tag = line.find(class_="article-meta-tag").text
         value = line.find(class_="article-meta-value").text
         if tag == "作者":
-            stash["author"] = value
+            m = author_pattern.search(value)
+            if m is not None:
+                stash["author"] = m.group(1)
+                stash["author_nickname"] = m.group(2)
+            else:
+                stash["author"] = value
+                stash["author_nickname"] = ""
         elif tag == "標題":
             stash["title"] = value
         elif tag == "時間":
@@ -100,12 +107,14 @@ def parse_publication(soups: Soups):
         "title": stash["title"],
         "publication_text": publication_text,
         "author": stash["author"],
-        "urls": external_links,
-        "image_urls": image_links,
-        "hashtags": [],
-        "keywords": [],
-        "tags": [],
-        "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id,},
-        "comments": comments,
         "connect_from": connect_from,
+        "data": {
+            "urls": external_links,
+            "image_urls": image_links,
+            "hashtags": [],
+            "keywords": [],
+            "tags": [],
+            "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
+            "comments": comments,
+        },
     }

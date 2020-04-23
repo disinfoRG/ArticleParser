@@ -9,70 +9,17 @@ import re
 
 import logging
 import readability
-from parser.gatrack import parse_ga_id
-import parser.ptt
-import parser.pttread
-import parser.scraper as scraper
+from .gatrack import parse_ga_id
+from . import db
+from . import ptt
+from . import pttread
+from . import scraper
 from . import version, Soups, Snapshot
 
 name = "parser.publication"
 
 logger = logging.getLogger(__name__)
 readability.readability.log.setLevel(logging.ERROR)
-
-
-def snapshots_getter_by_article_id(scraper_db, article_id, offset=0, limit=1000):
-    return scraper.get_snapshots(
-        scraper_db, article_id=article_id, offset=offset, limit=limit
-    )
-
-
-def snapshots_getter_by_url(scraper_db, url, offset=0, limit=1000):
-    return scraper.get_snapshots(scraper_db, url=url, offset=offset, limit=limit)
-
-
-def snapshots_getter(scraper_db, parser_db, offset=0, limit=100):
-    info = json.loads(parser_db.get_parser_info(parser_name=name)["info"])
-    later_than = (
-        info["last_processed_snapshot_at"]
-        if "last_processed_snapshot_at" in info
-        else 0
-    )
-
-    return scraper.get_snapshots(
-        scraper_db, snapshot_at_later_than=later_than, offset=offset, limit=limit
-    )
-
-
-def snapshots_getter_by_parser_version(parser_db, version, site_id=None):
-    if site_id is None:
-        pubs = parser_db.get_publications_by_parser_version(version=version)
-    else:
-        pubs = parser_db.get_publications_by_parser_version_by_producer(
-            producer_id=site_id, version=version
-        )
-    ids = [(p["article_id"], p["snapshot_at"]) for p in pubs]
-
-    def get_snapshots(scraper_db, parser_db, offset=0, limit=1000):
-        batch = []
-        while len(ids) > 0:
-            article_id, snapshot_at = ids.pop(0)
-            s = scraper.get_snapshot(
-                scraper_db, article_id=article_id, snapshot_at=snapshot_at
-            )
-            if s is not None:
-                batch.append(s)
-            if len(batch) == limit:
-                return batch
-        return batch
-
-    return get_snapshots
-
-
-def snapshots_getter_by_site(scraper_db, site_id, offset=0, limit=1000):
-    return scraper.get_snapshots(
-        scraper_db, site_id=site_id, offset=offset, limit=limit
-    )
 
 
 def parse_meta_tags(body):
@@ -303,25 +250,27 @@ def parse_publication(soups: Soups):
         "title": title,
         "publication_text": text,
         "author": None,
-        "urls": external_links,
-        "image_urls": image_links,
-        "hashtags": [],
-        "keywords": [],
-        "tags": [],
-        "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
-        "comments": [],
         "connect_from": None,
+        "data": {
+            "urls": external_links,
+            "image_urls": image_links,
+            "hashtags": [],
+            "keywords": [],
+            "tags": [],
+            "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
+            "comments": [],
+        },
     }
 
 
 parsers = {
-    "ptt": parser.ptt.parse_publication,
-    "pttread": parser.pttread.parse_publication,
+    "ptt": ptt.parse_publication,
+    "pttread": pttread.parse_publication,
     "default": parse_publication,
 }
 
 
-def process(snapshot: Snapshot, parser: str = "default"):
+def process_item(snapshot: Snapshot, parser: str = "default"):
     soups = parse_soups(snapshot)
     if parser == "default":
         if soups.snapshot.article_type == "PTT":
@@ -333,10 +282,13 @@ def process(snapshot: Snapshot, parser: str = "default"):
 
 
 def save_ga_id(parser_db, publication):
-    if "ga-id" in publication["metadata"] and len(publication["metadata"]["ga-id"]) > 0:
-        ga_id = publication["metadata"]["ga-id"]
-        producer = parser_db.get_producer(producer_id=publication["producer_id"])
-        identifiers = json.loads(producer["identifiers"])
+    metadata = publication["data"]["metadata"]
+    if "ga-id" in metadata and len(metadata["ga-id"]) > 0:
+        ga_id = metadata["ga-id"]
+        producer = db.to_producer(
+            parser_db.get_producer(producer_id=publication["producer_id"])
+        )
+        identifiers = producer["data"]["identifiers"]
         if "ga-id" not in identifiers:
             logger.debug("Add ga-id to producer %s.", publication["producer_id"])
             parser_db.update_producer_identifiers(
@@ -371,14 +323,9 @@ def is_updated(exist_pub, new_pub):
         "title",
         "publication_text",
         "published_at",
-        "comments",
-        "hashtags",
-        "urls",
-        "keywords",
-        "tags",
-        "metadata",
         "author",
         "connect_from",
+        "data",
     ]:
         if exist_pub[field] != new_pub[field]:
             return True
@@ -386,21 +333,7 @@ def is_updated(exist_pub, new_pub):
 
 
 def to_publication(row):
-    return {
-        **row,
-        **{
-            field: json.loads(row[field])
-            for field in [
-                "urls",
-                "hashtags",
-                "keywords",
-                "tags",
-                "metadata",
-                "comments",
-            ]
-            if row[field]
-        },
-    }
+    return {**row, "data": json.loads(row["data"])}
 
 
 def is_new_version(existing, publication):
@@ -432,18 +365,7 @@ def saver(parser_db, item):
                 parser_db.insert_publication(
                     **{
                         **publication,
-                        **{
-                            k: json.dumps(publication[k], ensure_ascii=False)
-                            for k in [
-                                "urls",
-                                "hashtags",
-                                "keywords",
-                                "tags",
-                                "metadata",
-                                "comments",
-                            ]
-                            if k in publication
-                        },
+                        "data": json.dumps(publication["data"], ensure_ascii=False),
                     },
                     publication_id=publication_id,
                 )

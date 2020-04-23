@@ -2,7 +2,7 @@ import datetime
 from . import Soups
 import re
 import bs4
-from parser.gatrack import parse_ga_id
+from .gatrack import parse_ga_id
 
 ip_pattern = re.compile("((?:\d+\.){3}\d+)")
 
@@ -105,12 +105,14 @@ def parse_publication(soups: Soups):
         "title": stash["title"],
         "publication_text": publication_text,
         "author": stash["author"],
-        "urls": external_links,
-        "image_urls": image_links,
-        "hashtags": [],
-        "keywords": [],
-        "tags": [],
-        "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
-        "comments": comments,
         "connect_from": connect_from,
+        "data": {
+            "urls": external_links,
+            "image_urls": image_links,
+            "hashtags": [],
+            "keywords": [],
+            "tags": [],
+            "metadata": {"metatags": soups.metatags, **soups.metadata, "ga-id": ga_id},
+            "comments": comments,
+        },
     }

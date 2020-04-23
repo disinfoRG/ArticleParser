@@ -1,24 +1,26 @@
--- :name get_producers_in_batch :many
-SELECT
-  HEX(producer_id) AS producer_id,
-  name, classification, url, first_seen_at, last_updated_at, languages, licenses, followership, identifiers
-FROM producer
-LIMIT :limit
-OFFSET :offset
-
 -- :name get_producers :many
 SELECT
   HEX(producer.producer_id) AS producer_id,
-  producer_mapping.site_id AS site_id,
-  name, classification, url, first_seen_at, last_updated_at, identifiers
+  name, classification, url, first_seen_at, last_updated_at, data,
+  scraper_id, site_id
 FROM producer
 JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
+
+-- :name get_producers_batch :many
+SELECT
+  HEX(producer.producer_id) AS producer_id,
+  name, classification, url, first_seen_at, last_updated_at, data,
+  scraper_id, site_id
+FROM producer
+JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
+LIMIT :limit
+OFFSET :offset
 
 -- :name get_producer :one
 SELECT
   HEX(producer.producer_id) AS producer_id,
-  producer_mapping.site_id AS site_id,
-  name, classification, url, first_seen_at, last_updated_at, identifiers
+  name, classification, url, first_seen_at, last_updated_at, data,
+  scraper_id, site_id
 FROM producer
 JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
 WHERE producer.producer_id = UNHEX(:producer_id)
@@ -26,8 +28,8 @@ WHERE producer.producer_id = UNHEX(:producer_id)
 -- :name get_producer_by_site_id :one
 SELECT
   HEX(producer.producer_id) AS producer_id,
-  producer_mapping.site_id AS site_id,
-  name, classification, url, first_seen_at, last_updated_at, identifiers
+  name, classification, url, first_seen_at, last_updated_at, data,
+  scraper_id, site_id
 FROM producer
 JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
 WHERE producer_mapping.site_id = :site_id
@@ -35,18 +37,18 @@ WHERE producer_mapping.site_id = :site_id
 -- :name get_producer_with_stats :one
 SELECT
   HEX(producer.producer_id) AS producer_id,
-  producer_mapping.site_id AS site_id,
-  name, classification, url, first_seen_at, last_updated_at, identifiers,
-  (SELECT COUNT(*) FROM publication WHERE producer_id = :producer_id) AS publication_count
+  name, classification, url, first_seen_at, last_updated_at, data,
+  scraper_id, site_id,
+  (SELECT COUNT(*) FROM publication WHERE producer_id = UNHEX(:producer_id)) AS publication_count
 FROM producer
 JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
 WHERE producer.producer_id = UNHEX(:producer_id)
 
 -- :name insert_producer :insert
 INSERT INTO producer
-  (producer_id, name, classification, url, languages, licenses, followership, identifiers)
+  (producer_id, name, classification, url, data)
 VALUES
-  (UNHEX(REPLACE(:producer_id, '-', '')), :name, :classification, :url, :languages, :licenses, :followership, :identifiers)
+  (UNHEX(REPLACE(:producer_id, '-', '')), :name, :classification, :url, :data)
 
 -- :name update_producer :affected
 UPDATE producer
@@ -57,10 +59,10 @@ SET
 WHERE producer_id = UNHEX(:producer_id)
 
 -- :name update_producer_identifiers :affected
-UPDATE producer
-SET
-  identifiers = :identifiers
-WHERE producer_id = UNHEX(:producer_id)
+-- UPDATE producer
+-- SET
+--   identifiers = :identifiers
+-- WHERE producer_id = UNHEX(:producer_id)
 
 -- :name update_producer_active_dates :affected
 UPDATE producer

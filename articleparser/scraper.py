@@ -1,6 +1,19 @@
+from typing import *
 import sqlalchemy as sa
 from sqlalchemy import sql
 import zlib
+
+
+class Site(NamedTuple):
+    site_id: int
+    type: str
+    name: str
+    url: str
+    config: str
+    is_active: Optional[int]
+    airtable_id: str
+    site_info: str
+    last_crawled_at: Optional[int]
 
 
 class ScraperDb:
@@ -102,9 +115,7 @@ def get_snapshots(
     if url is not None:
         clauses.append(db("article").c.url_hash == zlib.crc32(url.encode("utf-8")))
         clauses.append(db("article").c.url == url)
-    return db.execute(
-        query_snapshot(db, limit=limit, offset=offset).where(sql.and_(*clauses))
-    )
+    return query_snapshot(db).where(sql.and_(*clauses))
 
 
 def get_snapshot(db, article_id, snapshot_at):
@@ -121,19 +132,9 @@ def get_snapshot(db, article_id, snapshot_at):
     return result.fetchone()
 
 
-def get_sites(db, limit=1000, offset=0):
-    """
-    Get data of all sites as a result set.
-    """
-    return db.execute(db("site").select().limit(limit).offset(offset))
+def get_sites(db):
+    return db("site").select()
 
 
 def get_site(db, site_id):
-    """
-    Get data of one site by its id.
-
-    Get `None` if there is no such site.
-    """
-    query = db("site").select().where(db("site").c.site_id == site_id)
-    result = db.execute(query)
-    return result.fetchone()
+    return get_sites(db).where(db("site").c.site_id == site_id)

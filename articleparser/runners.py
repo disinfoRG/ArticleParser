@@ -18,11 +18,14 @@ class DbGetter:
 
     def batches(self, batch_size=1000, limit=10000):
         for offset in range(0, limit, batch_size):
-            yield self.query(
-                self.db,
-                offset=offset,
-                limit=batch_size if offset + batch_size < limit else limit - offset,
+            yield self.db.execute(
+                self.query(self.db)
+                .offset(offset)
+                .limit(batch_size if offset + batch_size < limit else limit - offset)
             )
+
+    def fetchall(self):
+        return self.db.execute(self.query(self.db))
 
 
 class DbSaver:
@@ -69,3 +72,8 @@ def run_parser(data_getter, processor, data_saver, batch_size=1000, limit=10000)
             break
         count = process_items(items=batch, processor=processor, data_saver=data_saver)
         logger.info("Processed %d items starting from item %d.", count, i * batch_size)
+
+
+def run_in_one_shot(data_getter, processor, data_saver):
+    count = process_items(data_getter.fetchall(), processor, data_saver)
+    logger.info("Processed %d items.", count)

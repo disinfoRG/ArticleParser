@@ -51,7 +51,7 @@ publication_fieldnames = [
 
 
 def producers_getter(db, offset=0, limit=1000):
-    return db.get_producers_in_batch(offset=offset, limit=limit)
+    return db.get_producers_batch(offset=offset, limit=limit)
 
 
 def publications_getter(producer_id=None, published_at_range=None):

@@ -1,96 +1,44 @@
 #!/usr/bin/env python3
-
 from dotenv import load_dotenv
 
 load_dotenv()
-
 import os
+import sys
+import traceback
 import argparse
 import logging
 from uuid import UUID
-import pugsql
 from functools import partial
-from parser.runner import run_parser, DbGetter, DbSaver, JsonSaver
-from parser import version
-import parser.producer as producer
-import parser.publication as publication
-import parser.scraper as scraper
+from articleparser.runners import (
+    run_parser,
+    run_in_one_shot,
+    DbGetter,
+    DbSaver,
+    JsonSaver,
+)
+from articleparser import version
+from articleparser import db
+import articleparser.producer as producer
+import articleparser.publication as publication
+import articleparser.scraper as scraper
 
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 
-
-def parse_article(scraper_db, parser_db, article_id, args):
-    run_parser(
-        data_getter=DbGetter(
-            scraper_db,
-            publication.snapshots_getter_by_article_id,
-            article_id=article_id,
-        ),
-        data_saver=DbSaver(parser_db, publication.saver)
-        if not args.dump
-        else JsonSaver(),
-        processor=partial(publication.process, parser=args.parser),
-        batch_size=1000,
-        limit=args.limit,
-    )
+import json
 
 
-def parse_all_articles(scraper_db, parser_db, args):
+def get_all_unprocessed_articles(scraper_db, parser_db, args):
     publication.update_parser_info(parser_db)
-    run_parser(
-        data_getter=DbGetter(
-            scraper_db, publication.snapshots_getter, parser_db=parser_db
-        ),
-        data_saver=DbSaver(parser_db, publication.saver)
-        if not args.dump
-        else JsonSaver(),
-        processor=partial(publication.process, parser=args.parser),
-        batch_size=1000,
-        limit=args.limit,
+    info = json.loads(parser_db.get_parser_info(parser_name=publication.name)["info"])
+    later_than = (
+        info["last_processed_snapshot_at"]
+        if "last_processed_snapshot_at" in info
+        else 0
     )
 
-
-def parse_all_old_articles(scraper_db, parser_db, args):
-    run_parser(
-        data_getter=DbGetter(
-            scraper_db,
-            publication.snapshots_getter_by_parser_version(
-                parser_db=parser_db, site_id=args.site_id, version=version
-            ),
-            parser_db=parser_db,
-        ),
-        data_saver=DbSaver(parser_db, publication.saver)
-        if not args.dump
-        else JsonSaver(),
-        processor=partial(publication.process, parser=args.parser),
-        batch_size=1000,
-        limit=args.limit,
-    )
-
-
-def parse_article_by_url(scraper_db, parser_db, url, args):
-    run_parser(
-        data_getter=DbGetter(scraper_db, publication.snapshots_getter_by_url, url=url),
-        data_saver=DbSaver(parser_db, publication.saver)
-        if not args.dump
-        else JsonSaver(),
-        processor=partial(publication.process, parser=args.parser),
-        batch_size=1000,
-        limit=args.limit,
-    )
-
-
-def parse_article_by_site(scraper_db, parser_db, site_id, args):
-    run_parser(
-        data_getter=DbGetter(
-            scraper_db, publication.snapshots_getter_by_site, site_id=site_id
-        ),
-        data_saver=DbSaver(parser_db, publication.saver)
-        if not args.dump
-        else JsonSaver(),
-        processor=partial(publication.process, parser=args.parser),
-        batch_size=1000,
-        limit=args.limit,
+    return DbGetter(
+        scraper_db, scraper.get_snapshots, snapshot_at_later_than=later_than
     )
 
 
@@ -105,79 +53,23 @@ def get_scraper(db, scraper_name):
     )
 
 
-def main(args):
-    logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
-
-    parser_db = pugsql.module("queries")
-    parser_db.connect(os.getenv("DB_URL"))
-    scraper_db = get_scraper(parser_db, "ZeroScraper")
-
-    if args.command == "producer":
-        data_saver = (
-            DbSaver(parser_db, producer.saver) if not args.dump else JsonSaver()
-        )
-        processor = producer.process
-        data_getter = None
-        if args.id is not None:
-            p = parser_db.get_producer(producer_id=args.id)
-            data_getter = DbGetter(
-                scraper_db, producer.site_getter, site_id=p["site_id"]
-            )
-        elif args.site_id is not None:
-            data_getter = DbGetter(
-                scraper_db, producer.site_getter, site_id=args.site_id
-            )
-        else:
-            data_getter = DbGetter(scraper_db, producer.all_sites_getter)
-        run_parser(
-            data_getter=data_getter,
-            data_saver=data_saver,
-            processor=processor,
-            limit=args.limit,
-        )
-    elif args.command == "publication":
-        if args.id is not None:
-            parse_article(scraper_db, parser_db, args.id, args=args)
-        elif args.article_id is not None:
-            parse_article(scraper_db, parser_db, args.article_id, args=args)
-        elif args.url is not None:
-            parse_article_by_url(scraper_db, parser_db, args.url, args=args)
-        elif args.update:
-            parse_all_old_articles(scraper_db, parser_db, args=args)
-        elif args.site_id is not None:
-            parse_article_by_site(scraper_db, parser_db, args.site_id, args=args)
-        else:
-            parse_all_articles(scraper_db, parser_db, args=args)
-    else:
-        raise Exception(f"Unknown command {args.command}")
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
 
-    # XXX not implemented
-    # parser.add_argument("--limit-sec", type=int, help="limit run time in seconds")
-    parser.add_argument(
-        "--limit", type=int, default=10000, help="limit number of entries to parse"
-    )
     parser.add_argument(
         "--dump",
         action="store_true",
-        help="dump data in STDOUT in JSON instead of writing to db",
+        help="dump parsed data to STDOUT instead of write it to db",
     )
     parser.add_argument(
-        "--scraper", default="ZeroScraper", help="name of scraper upstream to use"
+        "--scraper-name", default="ZeroScraper", help="name of upstream scraper to use"
     )
 
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
 
-    def uuid(value):
-        u = UUID(value)
-        return str(u).replace("-", "")
-
     prod_cmd = cmds.add_parser("producer", help="parses producers in parser db")
     prod_cmd.add_argument(
-        "id", type=uuid, help="id of the producer to parse in parser db", nargs="?"
+        "id", type=UUID, help="id of the producer to parse in parser db", nargs="?"
     )
     prod_cmd.add_argument(
         "--site-id", type=int, help="id of the site to parse in news db", nargs="?"
@@ -190,19 +82,90 @@ def parse_args():
     pub_cmd.add_argument(
         "--article-id", type=int, help="id the article to parse in news db", nargs="?"
     )
+    pub_cmd.add_argument("--url", help="url the article to parse in news db", nargs="?")
     pub_cmd.add_argument(
         "--site-id", type=int, help="parse all articles of this site", nargs="?"
     )
-    pub_cmd.add_argument("--url", help="url the article to parse in news db", nargs="?")
     pub_cmd.add_argument(
         "--update",
         action="store_true",
-        help="updates all publications parsed by older parsers",
+        help="update publications; do not parse new articles",
     )
     pub_cmd.add_argument("--parser", type=str, help="parser to use", default="default")
+    pub_cmd.add_argument(
+        "--limit", type=int, default=100000, help="limit number of entries to parse"
+    )
 
     return parser.parse_args()
 
 
+def main(args):
+    parser_db = db.module("queries")
+    parser_db.connect(os.getenv("DB_URL"))
+    try:
+        scraper_db = get_scraper(parser_db, "ZeroScraper")
+
+        if args.command == "producer":
+            if args.id is not None:
+                p = db.to_producer(
+                    parser_db.get_producer(producer_id=db.of_uuid(args.id))
+                )
+                data_getter = DbGetter(
+                    scraper_db, scraper.get_site, site_id=p["site_id"]
+                )
+            elif args.site_id is not None:
+                data_getter = DbGetter(
+                    scraper_db, scraper.get_site, site_id=args.site_id
+                )
+            else:
+                data_getter = DbGetter(scraper_db, scraper.get_sites)
+
+            data_saver = (
+                DbSaver(parser_db, producer.saver) if not args.dump else JsonSaver()
+            )
+            run_in_one_shot(
+                data_getter=data_getter,
+                data_saver=data_saver,
+                processor=producer.process_item,
+            )
+
+        elif args.command == "publication":
+            if args.id is not None:
+                raise RuntimeError("Unimplemented")
+            elif args.article_id is not None:
+                data_getter = DbGetter(
+                    scraper_db, scraper.get_snapshots, article_id=args.article_id
+                )
+            elif args.url is not None:
+                data_getter = DbGetter(scraper_db, scraper.get_snapshots, url=url)
+            elif args.site_id is not None:
+                data_getter = DbGetter(
+                    scraper_db, scraper.get_snapshots, site_id=args.site_id
+                )
+            elif args.update:
+                raise RuntimeError("Unimplementde")
+            else:
+                data_getter = get_all_unprocessed_articles(
+                    scraper_db, parser_db, args=args
+                )
+            run_parser(
+                data_getter=data_getter,
+                data_saver=DbSaver(parser_db, publication.saver)
+                if not args.dump
+                else JsonSaver(),
+                processor=partial(publication.process_item, parser=args.parser),
+                batch_size=1000,
+                limit=args.limit,
+            )
+        else:
+            raise RuntimeError(f"Unknown command '{args.command}'")
+        return 0
+    except:
+        logger.error(traceback.format_exc())
+        return -1
+    finally:
+        parser_db.disconnect()
+
+
 if __name__ == "__main__":
-    main(parse_args())
+    sys.exit(main(parse_args()))

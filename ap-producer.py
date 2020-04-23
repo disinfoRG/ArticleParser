@@ -1,63 +1,66 @@
 #!/usr/bin/env python3
-
 from dotenv import load_dotenv
 
 load_dotenv()
-
 import os
+import sys
 import logging
+import traceback
 import datetime
 import argparse
 from uuid import UUID
-import pugsql
+from articleparser import db
 from tabulate import tabulate
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 
-queries = pugsql.module("queries")
-queries.connect(os.getenv("DB_URL"))
-
-
-def timestamp_to_string(ts):
-    return datetime.datetime.fromtimestamp(ts) if ts else ""
+queries = db.module("queries")
 
 
 def main(args):
-    if args.command == "list":
-        print(
-            tabulate(
-                [
+    queries.connect(os.getenv("DB_URL"))
+    try:
+        if args.command == "list":
+            print(
+                tabulate(
                     [
-                        p["producer_id"],
-                        p["site_id"],
-                        p["name"],
-                        p["url"],
-                        timestamp_to_string(p["first_seen_at"]),
-                        timestamp_to_string(p["last_updated_at"]),
-                        p["identifiers"] if p["identifiers"] != "{}" else "",
-                    ]
-                    for p in queries.get_producers()
-                ],
-                headers=[
-                    "id",
-                    "site id",
-                    "name",
-                    "url",
-                    "first seen at",
-                    "last updated at",
-                    "identifiers",
-                ],
+                        [
+                            p["producer_id"],
+                            p["site_id"],
+                            p["name"],
+                            p["url"],
+                            p["first_seen_at"],
+                            p["last_updated_at"],
+                            p["data"]["identifiers"],
+                        ]
+                        for p in db.to_producers(queries.get_producers())
+                    ],
+                    headers=[
+                        "id",
+                        "site id",
+                        "name",
+                        "url",
+                        "first seen at",
+                        "last updated at",
+                        "identifiers",
+                    ],
+                )
             )
-        )
-    elif args.command == "show":
-        for producer_id in args.id:
-            producer = queries.get_producer_with_stats(producer_id=producer_id)
-            for field in ["first_seen_at", "last_updated_at"]:
-                producer[field] = timestamp_to_string(producer[field])
-            print(tabulate(producer.items()))
-    else:
-        raise RuntimeError(f"Unknown command '{args.command}'")
+        elif args.command == "show":
+            for producer_id in args.id:
+                data = queries.get_producer_with_stats(
+                    producer_id=db.of_uuid(producer_id)
+                )
+                print(tabulate(db.to_producer(data).items()))
+        else:
+            raise RuntimeError(f"Unknown command '{args.command}'")
+        return 0
+    except:
+        logger.error(traceback.format_exc())
+        return -1
+    finally:
+        queries.disconnect()
 
 
 if __name__ == "__main__":
@@ -70,7 +73,7 @@ if __name__ == "__main__":
         return str(u).replace("-", "")
 
     show_cmd = cmds.add_parser("show")
-    show_cmd.add_argument("id", type=uuid, help="producer id", nargs="+")
+    show_cmd.add_argument("id", type=UUID, help="producer id", nargs="+")
 
     args = parser.parse_args()
-    main(args)
+    sys.exit(main(args))
