@@ -1,0 +1,53 @@
+
+SELECT publication_id
+FROM publication
+WHERE
+	producer_id = UNHEX("5030BEC681FE11EA8627F23C92E71BAD")
+  AND published_at BETWEEN 1527180300 AND 1527217560
+
+SELECT publication_id
+FROM publication
+WHERE
+	producer_id = UNHEX("5030BEC681FE11EA8627F23C92E71BAD")
+  AND published_at = 1527180300
+
+SELECT publication_id
+FROM publication
+WHERE
+	producer_id = UNHEX("5030BEC681FE11EA8627F23C92E71BAD")
+  AND published_at IS NULL
+
+SELECT *
+FROM publication
+WHERE
+  publication_id IN (UNHEX("0E81F0918C41A1AEFDED8010A78977"), UNHEX("1C80EB0F96BE4B99B6CFE5E385DC5D18"))
+
+SELECT publication_id, version
+FROM publication
+WHERE
+	producer_id = UNHEX("5030BEC681FE11EA8627F23C92E71BAD")
+	AND version > 1587062842
+
+SELECT DISTINCT(published_at)
+FROM publication
+WHERE
+	producer_id = UNHEX("5030BEC681FE11EA8627F23C92E71BAD")
+	AND version > 1587062842
+
+SELECT publication_id, version, published_at
+FROM publication
+WHERE
+	producer_id = UNHEX("5030BEC681FE11EA8627F23C92E71BAD")
+	AND version > 1587062842
+	AND published_at = 1527180300
+
+SELECT DISTINCT(DATE(FROM_UNIXTIME(published_at)))
+FROM publication
+WHERE
+	producer_id = UNHEX("5030a4ff81fe11ea8627f23c92e71bad")
+
+SELECT DISTINCT(DATE(FROM_UNIXTIME(published_at)))
+FROM publication
+WHERE
+	producer_id = UNHEX("5030a4ff81fe11ea8627f23c92e71bad")
+  AND version > 1587062842

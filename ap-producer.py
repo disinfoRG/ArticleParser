@@ -68,10 +68,6 @@ if __name__ == "__main__":
     cmds = parser.add_subparsers(title="sub command", dest="command", required=True)
     cmds.add_parser("list")
 
-    def uuid(value):
-        u = UUID(value)
-        return str(u).replace("-", "")
-
     show_cmd = cmds.add_parser("show")
     show_cmd.add_argument("id", type=UUID, help="producer id", nargs="+")
 
