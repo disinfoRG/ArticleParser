@@ -5,29 +5,26 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 import sys
-import datetime
 import pathlib
 import logging
+import traceback
 import argparse
+from uuid import UUID
+import dateparser
+import datetime
 import pugsql
-from publisher.runner import runner
-from publisher import writer
-from publisher import transform
+from functools import partial
+from articleparser.runners import run_batch, run_one_shot, QueryGetter
+from articleparser.publish import (
+    process_producer_item,
+    process_publication_item,
+    JsonItemSaver,
+)
+from articleparser.db import of_uuid
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 queries = pugsql.module("queries")
-
-producer_fieldnames = [
-    "id",
-    "name",
-    "identifiers",
-    "classification",
-    "url",
-    "first_seen_at",
-    "last_updated_at",
-    "followership",
-]
 
 publication_fieldnames = [
     "id",
@@ -48,10 +45,6 @@ publication_fieldnames = [
     "comments",
     "connect_from",
 ]
-
-
-def producers_getter(db, offset=0, limit=1000):
-    return db.get_producers_batch(offset=offset, limit=limit)
 
 
 def publications_getter(producer_id=None, published_at_range=None):
@@ -105,28 +98,29 @@ def parse_args():
         description="Publish datasets from parser database"
     )
     parser.add_argument(
-        "command",
-        choices=["producer", "publication", "all"],
-        help="data class to publish",
+        "-f", "--format", choices=["jsonl"], help="export format", default="jsonl"
     )
-    parser.add_argument(
-        "-g",
-        "--group-by",
-        choices=["published_day", "all"],
-        default="all",
-        help="criteria on which data in each of the export files is grouped by",
+    parser.add_argument("-o", "--output", default="-", help="save to file")
+    cmds = parser.add_subparsers(
+        title="data class to publish", dest="command", required=True
     )
-    parser.add_argument(
-        "-f", "--format", choices=["csv", "jsonl"], help="export format: jsonl, csv"
+    prod_cmd = cmds.add_parser("producer", help="publish producer data in parser db")
+    pub_cmd = cmds.add_parser(
+        "publication", help="publish publication data in parse db"
     )
-    parser.add_argument(
-        "-o",
-        "--output",
-        default="-",
-        help="save to file (or directory if group by is not 'all')",
+    pub_cmd.add_argument(
+        "--published-at",
+        type=dateparser.parse,
+        help="publishing day of the publication to publish",
+        required=True,
     )
-    parser.add_argument("--producer", help="producer id of the publication data")
-    parser.add_argument("--full-text", action="store_true", help="publish full text")
+    pub_cmd.add_argument(
+        "--producer",
+        type=UUID,
+        help="producer id of the publication to publish",
+        required=True,
+    )
+    pub_cmd.add_argument("--full-text", action="store_true", help="publish full text")
     return parser.parse_args()
 
 
@@ -134,70 +128,34 @@ def main(args):
     queries.connect(os.getenv("DB_URL"))
     try:
         if args.command == "producer":
-            runner(
-                from_db=queries,
-                getter=producers_getter,
-                transformer=transform.producers(fmt=args.format),
-                writer=writer.fromformat(
-                    args.format, filename=args.output, fieldnames=producer_fieldnames
-                ),
+            run_one_shot(
+                data_getter=QueryGetter(queries.get_producers),
+                processor=process_producer_item,
+                data_saver=JsonItemSaver(),
             )
-
         elif args.command == "publication":
-            if args.group_by == "all":
-                runner(
-                    from_db=queries,
-                    getter=publications_getter(),
-                    transformer=transform.publications(
-                        fmt=args.format, full_text=args.full_text
-                    ),
-                    writer=writer.fromformat(
-                        args.format,
-                        filename=args.output,
-                        fieldnames=publication_fieldnames,
-                    ),
-                )
-            elif args.group_by == "published_day":
-                outdir = pathlib.Path(args.output)
-                pubdate_range = (
-                    queries.get_publication_published_at_range_by_producer(
-                        producer_id=args.producer
-                    )
-                    if args.producer
-                    else queries.get_publication_published_at_range()
-                )
-                start = max(
-                    datetime.datetime.fromtimestamp(pubdate_range["start"]),
-                    datetime.datetime(2018, 1, 1, 0, 0, 0),
-                )
-                until = datetime.datetime.fromtimestamp(pubdate_range["end"])
-                for day in day_range(start=start, until=until):
-                    day_start = day.timestamp()
-                    logger.info(day_start)
-                    day_end = day_start + 86400
-                    runner(
-                        from_db=queries,
-                        getter=publications_getter(
-                            producer_id=args.producer,
-                            published_at_range=(day_start, day_end),
-                        ),
-                        transformer=transform.publications(
-                            fmt=args.format, full_text=args.full_text
-                        ),
-                        writer=writer.fromformat(
-                            args.format,
-                            filename=(
-                                outdir / (day.strftime("%Y-%m-%d") + f".{args.format}")
-                            ),
-                            fieldnames=publication_fieldnames,
-                        ),
-                    )
+            day_start = args.published_at.timestamp()
+            logger.info(day_start)
+            day_end = day_start + 86400
+            run_batch(
+                data_getter=QueryGetter(
+                    queries.get_publications_by_producer_ranged_by_published_at,
+                    producer_id=of_uuid(args.producer),
+                    start=day_start,
+                    end=day_end,
+                ),
+                processor=partial(process_publication_item, full_text=args.full_text),
+                data_saver=JsonItemSaver(),
+            )
         else:
             raise RuntimeError(f"Unknown command '{args.command}'")
+        return 0
+    except:
+        logger.error(traceback.format_exc())
+        return -1
     finally:
         queries.disconnect()
 
 
 if __name__ == "__main__":
-    args = parse_args()
-    sys.exit(main(args))
+    sys.exit(main(parse_args()))

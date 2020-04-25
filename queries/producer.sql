@@ -6,16 +6,6 @@ SELECT
 FROM producer
 JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
 
--- :name get_producers_batch :many
-SELECT
-  HEX(producer.producer_id) AS producer_id,
-  name, classification, url, first_seen_at, last_updated_at, data,
-  scraper_id, site_id
-FROM producer
-JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
-LIMIT :limit
-OFFSET :offset
-
 -- :name get_producer :one
 SELECT
   HEX(producer.producer_id) AS producer_id,

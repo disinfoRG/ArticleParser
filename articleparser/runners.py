@@ -8,6 +8,21 @@ import traceback
 logger = logging.getLogger(__name__)
 
 
+class QueryGetter:
+    def __init__(self, query, **kwargs):
+        if len(kwargs) != 0:
+            self.query = partial(query, **kwargs)
+        else:
+            self.query = query
+
+    def batches(self, batch_size=1000, limit=10000):
+        for offset in range(0, limit, batch_size):
+            yield self.query(offset=offset, limit=limit)
+
+    def fetchall(self):
+        return self.query()
+
+
 class DbGetter:
     def __init__(self, db, query, **kwargs):
         self.db = db
@@ -65,7 +80,7 @@ def process_items(items, processor, data_saver):
     return count
 
 
-def run_parser(data_getter, processor, data_saver, batch_size=1000, limit=10000):
+def run_batch(data_getter, processor, data_saver, batch_size=1000, limit=10000):
     for i, batch in enumerate(data_getter.batches(limit=limit, batch_size=batch_size)):
         batch = list(batch)
         if len(batch) == 0:
@@ -74,6 +89,6 @@ def run_parser(data_getter, processor, data_saver, batch_size=1000, limit=10000)
         logger.info("Processed %d items starting from item %d.", count, i * batch_size)
 
 
-def run_in_one_shot(data_getter, processor, data_saver):
+def run_one_shot(data_getter, processor, data_saver):
     count = process_items(data_getter.fetchall(), processor, data_saver)
     logger.info("Processed %d items.", count)

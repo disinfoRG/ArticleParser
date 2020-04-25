@@ -10,8 +10,8 @@ import logging
 from uuid import UUID
 from functools import partial
 from articleparser.runners import (
-    run_parser,
-    run_in_one_shot,
+    run_batch,
+    run_one_shot,
     DbGetter,
     DbSaver,
     JsonSaver,
@@ -123,7 +123,7 @@ def main(args):
             data_saver = (
                 DbSaver(parser_db, producer.saver) if not args.dump else JsonSaver()
             )
-            run_in_one_shot(
+            run_one_shot(
                 data_getter=data_getter,
                 data_saver=data_saver,
                 processor=producer.process_item,
@@ -148,7 +148,7 @@ def main(args):
                 data_getter = get_all_unprocessed_articles(
                     scraper_db, parser_db, args=args
                 )
-            run_parser(
+            run_batch(
                 data_getter=data_getter,
                 data_saver=DbSaver(parser_db, publication.saver)
                 if not args.dump
