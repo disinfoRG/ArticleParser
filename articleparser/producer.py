@@ -11,15 +11,8 @@ name = "parser.producer"
 logger = logging.getLogger(__name__)
 
 
-class Producer(NamedTuple):
-    name: str
-    classification: str
-    url: str
-    data: dict
-
-
-def process_item(site: Site) -> Producer:
-    return Producer(name=site.name, classification=site.type, url=site.url, data={})
+def process_item(site: Site):
+    return {"name": site.name, "classification": site.type, "url": site.url, "data": {}}
 
 
 def saver(queries, item):
