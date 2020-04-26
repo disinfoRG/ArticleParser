@@ -39,6 +39,23 @@ WHERE
 LIMIT :limit
 OFFSET :offset
 
+-- :name get_publications_by_producer_ranged_by_processed_at :many
+SELECT
+  HEX(P.publication_id) AS publication_id,
+  P.version AS version,
+  HEX(producer_id) AS producer_id,
+  canonical_url, title, publication_text, author, connect_from,
+  published_at, first_seen_at, last_updated_at,
+  data
+FROM publication_mapping as PM
+  JOIN publication as P
+  ON PM.publication_id = P.publication_id AND PM.version = P.version
+WHERE
+  P.producer_id = UNHEX(:producer_id)
+  AND JSON_EXTRACT(PM.info, "$.last_processed_at") > :processed_at
+LIMIT :limit
+OFFSET :offset
+
 -- :name get_publications_by_producer_published_at :many
 SELECT
   HEX(publication_id) AS publication_id,

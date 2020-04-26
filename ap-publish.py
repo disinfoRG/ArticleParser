@@ -69,16 +69,24 @@ def main(args):
                 data_saver=JsonItemSaver(),
             )
         elif args.command == "publication":
-            day_start = args.published_at.timestamp()
-            logger.info(day_start)
-            day_end = day_start + 86400
-            run_batch(
-                data_getter=QueryGetter(
+            if args.published_at:
+                day_start = args.published_at.timestamp()
+                logger.info(day_start)
+                day_end = day_start + 86400
+                data_getter = QueryGetter(
                     queries.get_publications_by_producer_ranged_by_published_at,
                     producer_id=of_uuid(args.producer),
                     start=day_start,
                     end=day_end,
-                ),
+                )
+            elif args.processed_at:
+                data_getter = QueryGetter(
+                    queries.get_publications_by_producer_ranged_by_processed_at,
+                    producer_id=of_uuid(args.producer),
+                    processed_at=args.processed_at.timestamp(),
+                )
+            run_batch(
+                data_getter=data_getter,
                 processor=partial(process_publication_item, full_text=args.full_text),
                 data_saver=JsonItemSaver(),
             )
