@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
-
 from dotenv import load_dotenv
 
 load_dotenv()
 import os
 import sys
-import pathlib
 import logging
 import traceback
 import argparse
 from uuid import UUID
 import dateparser
-import datetime
 import pugsql
 from functools import partial
 from articleparser.runners import run_batch, run_one_shot, QueryGetter
@@ -25,72 +22,6 @@ from articleparser.db import of_uuid
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 queries = pugsql.module("queries")
-
-publication_fieldnames = [
-    "id",
-    "version",
-    "identifiers",
-    "producer_id",
-    "canonical_url",
-    "title",
-    "text",
-    "author",
-    "published_at",
-    "first_seen_at",
-    "last_updated_at",
-    "urls",
-    "hashtags",
-    "keywords",
-    "reactions",
-    "comments",
-    "connect_from",
-]
-
-
-def publications_getter(producer_id=None, published_at_range=None):
-    def getter(db, offset=0, limit=1000):
-        if published_at_range is not None:
-            start, end = published_at_range
-            if producer_id is not None:
-                return db.get_publications_by_producer_ranged_by_published_at(
-                    producer_id=producer_id,
-                    start=start,
-                    end=end,
-                    limit=limit,
-                    offset=offset,
-                )
-            else:
-                return db.get_publications_ranged_by_published_at(
-                    start=start, end=end, limit=limit, offset=offset
-                )
-        else:
-            if producer_id is not None:
-                return db.get_publications(
-                    producer_id=producer_id, limit=limit, offset=offset
-                )
-            else:
-                return db.get_publications(limit=limit, offset=offset)
-
-    return getter
-
-
-def day_range(start=None, days=None, until=None):
-    if start is None:
-        start = datetime.datetime(2018, 1, 1, 0, 0, 0)
-    if until is None:
-        until = datetime.datetime.now()
-    day = start
-    step = datetime.timedelta(days=1)
-    if days is None:
-        while day <= until:
-            yield day
-            day = day + step
-    else:
-        for _ in range(days):
-            yield day
-            day = day + step
-            if day > until:
-                break
 
 
 def parse_args():
@@ -112,7 +43,11 @@ def parse_args():
         "--published-at",
         type=dateparser.parse,
         help="publishing day of the publication to publish",
-        required=True,
+    )
+    pub_cmd.add_argument(
+        "--processed-at",
+        type=dateparser.parse,
+        help="publish data processed after given time",
     )
     pub_cmd.add_argument(
         "--producer",
