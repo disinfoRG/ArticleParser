@@ -153,7 +153,7 @@ def main(args):
                 )
             run_batch(
                 data_getter=data_getter,
-                data_saver=DbSaver(parser_db, publication.saver)
+                data_saver=DbSaver(parser_db, publication.saver, scraper=sc)
                 if not args.dump
                 else JsonSaver(),
                 processor=partial(publication.process_item, parser=args.parser),

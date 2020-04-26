@@ -344,7 +344,7 @@ def is_new_version(existing, publication):
     return True
 
 
-def saver(parser_db, item):
+def saver(parser_db, item, scraper):
     publication, article_snapshot = item.item, item.original
     producer = parser_db.get_producer_by_site_id(site_id=publication["site_id"])
     publication["producer_id"] = producer["producer_id"]
@@ -380,6 +380,7 @@ def saver(parser_db, item):
         parser_db.upsert_publication_mapping(
             article_id=article_snapshot["article_id"],
             snapshot_at=article_snapshot["snapshot_at"],
+            scraper_id=scraper["scraper_id"],
             publication_id=publication_id,
             version=publication["version"],
             info=json.dumps(

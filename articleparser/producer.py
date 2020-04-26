@@ -15,7 +15,7 @@ def process_item(site: Site):
     return {"name": site.name, "classification": site.type, "url": site.url, "data": {}}
 
 
-def saver(queries, item, scraper=None):
+def saver(queries, item, scraper):
     producer, site = item.item, item.original
     with queries.transaction():
         existing = queries.get_producer_by_site_id(site_id=site["site_id"])

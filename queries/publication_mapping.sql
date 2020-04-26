@@ -1,8 +1,8 @@
 -- :name upsert_publication_mapping :insert
 INSERT INTO publication_mapping
-  (article_id, snapshot_at, publication_id, version, info)
+  (article_id, snapshot_at, publication_id, version, info, scraper_id)
 VALUES
-  (:article_id, :snapshot_at, UNHEX(:publication_id), :version, :info)
+  (:article_id, :snapshot_at, UNHEX(:publication_id), :version, :info, :scraper_id)
 ON DUPLICATE KEY UPDATE
   info = :info
 
