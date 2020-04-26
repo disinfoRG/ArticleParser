@@ -9,13 +9,7 @@ import argparse
 import logging
 from uuid import UUID
 from functools import partial
-from articleparser.runners import (
-    run_batch,
-    run_one_shot,
-    DbGetter,
-    DbSaver,
-    JsonSaver,
-)
+from articleparser.runners import run_batch, run_one_shot, DbGetter, DbSaver, JsonSaver
 from articleparser import version
 from articleparser import db
 import articleparser.producer as producer
@@ -103,7 +97,14 @@ def main(args):
     parser_db = db.module("queries")
     parser_db.connect(os.getenv("DB_URL"))
     try:
-        scraper_db = get_scraper(parser_db, "ZeroScraper")
+        sc = parser_db.get_scraper_by_name(scraper_name=args.scraper_name)
+        scraper_db = scraper.ScraperDb(
+            sc["scraper_name"],
+            os.getenv(sc["db_url_var"]),
+            site_table_name=sc["site_table_name"],
+            article_table_name=sc["article_table_name"],
+            snapshot_table_name=sc["snapshot_table_name"],
+        )
 
         if args.command == "producer":
             if args.id is not None:
@@ -121,7 +122,9 @@ def main(args):
                 data_getter = DbGetter(scraper_db, scraper.get_sites)
 
             data_saver = (
-                DbSaver(parser_db, producer.saver) if not args.dump else JsonSaver()
+                DbSaver(parser_db, producer.saver, scraper=sc)
+                if not args.dump
+                else JsonSaver()
             )
             run_one_shot(
                 data_getter=data_getter,

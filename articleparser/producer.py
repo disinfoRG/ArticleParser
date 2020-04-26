@@ -15,7 +15,7 @@ def process_item(site: Site):
     return {"name": site.name, "classification": site.type, "url": site.url, "data": {}}
 
 
-def saver(queries, item):
+def saver(queries, item, scraper=None):
     producer, site = item.item, item.original
     with queries.transaction():
         existing = queries.get_producer_by_site_id(site_id=site["site_id"])
@@ -44,6 +44,7 @@ def saver(queries, item):
         queries.upsert_producer_mapping(
             site_id=site["site_id"],
             producer_id=producer_id,
+            scraper_id=scraper["scraper_id"],
             info=json.dumps(
                 {
                     "last_processed_at": int(datetime.datetime.now().timestamp()),

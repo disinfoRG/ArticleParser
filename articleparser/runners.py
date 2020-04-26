@@ -44,14 +44,15 @@ class DbGetter:
 
 
 class DbSaver:
-    def __init__(self, db, query, log_interval=1000):
+    def __init__(self, db, query, log_interval=1000, **kwargs):
         self.db = db
         self.query = query
         self.log_interval = log_interval
         self.count = 0
+        self.kwargs = kwargs
 
     def save(self, item):
-        self.query(self.db, item)
+        self.query(self.db, item, **self.kwargs)
         self.count += 1
         if self.count % self.log_interval == 0:
             logger.info("Save item %d.", self.count)

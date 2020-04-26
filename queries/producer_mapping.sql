@@ -7,8 +7,8 @@ WHERE
 
 -- :name upsert_producer_mapping :insert
 INSERT INTO producer_mapping
-  (site_id, producer_id, info)
+  (site_id, producer_id, info, scraper_id)
 VALUES
-  (:site_id, UNHEX(:producer_id), :info)
+  (:site_id, UNHEX(:producer_id), :info, :scraper_id)
 ON DUPLICATE KEY UPDATE
-  producer_id = UNHEX(:producer_id), info = :info
+  info = :info
