@@ -1,0 +1,16 @@
+{
+  "repo": "disinfoRG/ArticleParser",
+  "author": "0archive contributors",
+  "status": "Beta",
+  "name": "ArticleParser",
+  "name_zh": "內文解析器",
+  "homepage": "https://0archive.tw/",
+  "description": "0archive is a g0v project to archive and analyze Taiwan’s information space with open-source, automated tools, producing open-source data sets and reports.",
+  "description_zh": "由 g0v 社群參與者發起，《零時檔案局》要用開源鄉民的力量，蒐集資料，協力研究台灣資訊空間。",
+  "document": "",
+  "repository": "https://g0v.hackmd.io/@chihao/0archive/",
+  "licenses": "MIT",
+  "keywords": "disinfo, dataset, open source",
+  "products": "https://0archive.tw/",
+  "partOf": ""
+}
