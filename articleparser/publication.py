@@ -346,36 +346,44 @@ def is_new_version(existing, publication):
 
 def saver(parser_db, item, scraper):
     publication, article_snapshot = item.item, item.original
-    producer = parser_db.get_producer_by_site_id(site_id=publication["site_id"])
+    site_id = publication.pop("site_id")
+    producer = parser_db.get_producer_by_site_id(site_id=site_id)
     publication["producer_id"] = producer["producer_id"]
-    del publication["site_id"]
     with parser_db.transaction():
         publication_id = parser_db.get_publication_id_by_article_id(
             article_id=article_snapshot["article_id"]
         )
         if publication_id is None:
+            logger.debug(
+                "Saving publication of article %d.", article_snapshot["article_id"]
+            )
+            publication["publication_id"] = publication_id = str(uuid.uuid4()).replace(
+                "-", ""
+            )
+            parser_db.insert_publication(
+                **{
+                    **publication,
+                    "data": json.dumps(publication["data"], ensure_ascii=False),
+                }
+            )
+        else:
+            publication_id = publication_id["publication_id"]
             existing_pub = parser_db.get_publication_by_article_id(
                 article_id=article_snapshot["article_id"]
             )
             if is_new_version(existing_pub, publication):
-                logger.debug(
-                    "Saving publication of article %d.", article_snapshot["article_id"]
-                )
-                publication_id = str(uuid.uuid4()).replace("-", "")
-                parser_db.insert_publication(
+                publication["publication_id"] = publication_id
+                parser_db.update_publication(
                     **{
                         **publication,
                         "data": json.dumps(publication["data"], ensure_ascii=False),
-                    },
-                    publication_id=publication_id,
+                    }
                 )
             else:
                 logger.debug(
                     "Skipping publication of article %d because content unchanged.",
                     article_snapshot["article_id"],
                 )
-        else:
-            parser_db.update_publication(**publication, publication_id=publication_id)
 
         parser_db.upsert_publication_mapping(
             article_id=article_snapshot["article_id"],

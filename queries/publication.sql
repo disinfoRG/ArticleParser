@@ -96,9 +96,9 @@ WHERE PM.article_id = :article_id
 ORDER BY P.version ASC
 
 -- :name get_publication_id_by_article_id :one
-SELECT DISTINCT(HEX(publication_id))
+SELECT DISTINCT(HEX(publication_id)) AS publication_id
 FROM publication_mapping
-WHERE article_id = UNHEX(:article_id)
+WHERE article_id = :article_id
 
 -- :name insert_publication :insert
 INSERT INTO publication
