@@ -9,6 +9,7 @@ import traceback
 import argparse
 from uuid import UUID
 import dateparser
+import datetime
 import pugsql
 from functools import partial
 from articleparser.runners import run_batch, run_one_shot, QueryGetter
@@ -22,6 +23,15 @@ from articleparser.db import of_uuid
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 queries = pugsql.module("queries")
+
+
+def parse_date_range(value):
+    if value.find(":") >= 0:
+        start, end = value.split(":", 1)
+        return (dateparser.parse(start), dateparser.parse(end))
+    else:
+        d = dateparser.parse(value)
+        return (d, d + datetime.timedelta(days=1))
 
 
 def parse_args():
@@ -46,7 +56,7 @@ def parse_args():
     )
     pub_cmd.add_argument(
         "--processed-at",
-        type=dateparser.parse,
+        type=parse_date_range,
         help="publish data processed after given time",
     )
     pub_cmd.add_argument(
@@ -80,10 +90,17 @@ def main(args):
                     end=day_end,
                 )
             elif args.processed_at:
+                logger.debug(
+                    "publications by %s processed between %s and %s",
+                    args.producer,
+                    args.processed_at[0],
+                    args.processed_at[1],
+                )
                 data_getter = QueryGetter(
                     queries.get_publications_by_producer_ranged_by_processed_at,
                     producer_id=of_uuid(args.producer),
-                    processed_at=args.processed_at.timestamp(),
+                    start=args.processed_at[0].timestamp(),
+                    end=args.processed_at[1].timestamp() - 1,
                 )
             run_batch(
                 data_getter=data_getter,

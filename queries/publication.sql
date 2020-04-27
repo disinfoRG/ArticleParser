@@ -52,7 +52,7 @@ FROM publication_mapping as PM
   ON PM.publication_id = P.publication_id AND PM.version = P.version
 WHERE
   P.producer_id = UNHEX(:producer_id)
-  AND JSON_EXTRACT(PM.info, "$.last_processed_at") > :processed_at
+  AND JSON_EXTRACT(PM.info, "$.last_processed_at") BETWEEN :start AND :end
 LIMIT :limit
 OFFSET :offset
 
