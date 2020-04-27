@@ -7,7 +7,7 @@ import sys
 import json
 import re
 
-m = re.compile("\/([^\/]+)$").search(os.getenv("SEARCH_URL"))
+m = re.compile("\/([^:\/]+)(:\d+)?$").search(os.getenv("SEARCH_URL"))
 if m is None:
     print("Unrecognized SEARCH_URL")
     sys.exit(-1)
