@@ -56,6 +56,16 @@ WHERE
 LIMIT :limit
 OFFSET :offset
 
+-- :name get_published_date_by_producer_ranged_by_processed_at :many
+SELECT
+  DISTINCT(DATE(FROM_UNIXTIME(P.published_at))) AS published_date
+FROM publication_mapping as PM
+  JOIN publication as P
+  ON PM.publication_id = P.publication_id AND PM.version = P.version
+WHERE
+  P.producer_id = UNHEX(:producer_id)
+  AND JSON_EXTRACT(PM.info, "$.last_processed_at") BETWEEN :start AND :end
+
 -- :name get_publications_by_producer_published_at :many
 SELECT
   HEX(publication_id) AS publication_id,

@@ -1,6 +1,6 @@
 from typing import *
 import pugsql
-from datetime import datetime
+from datetime import datetime, date
 from uuid import UUID
 import json
 
@@ -29,6 +29,10 @@ def to_datetime(ts: int = None, default=None) -> datetime:
 
 def of_datetime(d: datetime) -> int:
     return int(d.timestamp())
+
+
+def of_date(d: date) -> int:
+    return int(datetime.combine(d, datetime.min.time()).timestamp())
 
 
 def to_json(j: str = None, default=None) -> Any:

@@ -7,10 +7,12 @@ import sys
 import logging
 import traceback
 import argparse
+from pathlib import Path
 from uuid import UUID
 import dateparser
 import datetime
 import pugsql
+import zipfile
 from functools import partial
 from articleparser.runners import run_batch, run_one_shot, QueryGetter
 from articleparser.publish import (
@@ -18,7 +20,8 @@ from articleparser.publish import (
     process_publication_item,
     JsonItemSaver,
 )
-from articleparser.db import of_uuid
+from articleparser.db import of_uuid, of_date, to_producer
+from articleparser.drive import GoogleDrive
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
@@ -32,6 +35,59 @@ def parse_date_range(value):
     else:
         d = dateparser.parse(value)
         return (d, d + datetime.timedelta(days=1))
+
+
+def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tmp"):
+    logger.debug("%s %s %s %s", drive, producer, published_at, full_text)
+    tmp_dir = Path(tmp_dir)
+    tmp_dir.mkdir(exist_ok=True)
+    output = tmp_dir / published_at.strftime("%Y-%m-%d.jsonl")
+    outzip = tmp_dir / published_at.strftime("%Y-%m-%d.jsonl.zip")
+    data_getter = QueryGetter(
+        queries.get_publications_by_producer_ranged_by_published_at,
+        producer_id=of_uuid(producer["producer_id"]),
+        start=of_date(published_at),
+        end=of_date(published_at) + 86400 - 1,
+    )
+    run_batch(
+        data_getter=data_getter,
+        processor=partial(process_publication_item, full_text=full_text),
+        data_saver=JsonItemSaver(filename=output),
+    )
+    with zipfile.ZipFile(outzip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.write(output, arcname=output.name)
+    parent_dir_id = None
+    if not drive.has_producer_dir(producer):
+        parent_dir_id = drive.make_producer_dir(producer)
+        r = queries.update_drive_producer_dir_id(
+            name=drive.name,
+            producer_id=str(producer["producer_id"]),
+            dir_id=parent_dir_id,
+        )
+        logger.debug("%d", r)
+    else:
+        parent_dir_id = drive.get_producer_dir(producer)
+
+    upload_id = None
+    if not drive.has_producer_file(producer, output.stem):
+        upload_id = drive.upload(parent_dir_id, filename=outzip)
+        logger.debug("%s %s %s", parent_dir_id, upload_id, output.stem)
+        r = queries.update_drive_file_id(
+            name=drive.name,
+            producer_id=str(producer["producer_id"]),
+            filename=output.stem,
+            file_id=upload_id,
+        )
+        logger.debug("%d", r)
+    else:
+        upload_id = drive.upload(
+            parent_dir_id,
+            filename=outzip,
+            file_id=drive.get_producer_file(producer, output.stem),
+        )
+
+    output.unlink()
+    outzip.unlink()
 
 
 def parse_args():
@@ -50,22 +106,25 @@ def parse_args():
         "publication", help="publish publication data in parse db"
     )
     pub_cmd.add_argument(
-        "--published-at",
-        type=dateparser.parse,
-        help="publishing day of the publication to publish",
-    )
-    pub_cmd.add_argument(
-        "--processed-at",
-        type=parse_date_range,
-        help="publish data processed after given time",
-    )
-    pub_cmd.add_argument(
         "--producer",
         type=UUID,
         help="producer id of the publication to publish",
         required=True,
     )
     pub_cmd.add_argument("--full-text", action="store_true", help="publish full text")
+    pub_cmd.add_argument(
+        "--published-at",
+        type=parse_date_range,
+        help="publishing day of the publication to publish",
+    )
+    pub_cmd.add_argument(
+        "--drive", help="Google Drive name to publish datasets", default="local"
+    )
+    pub_cmd.add_argument(
+        "--processed-at",
+        type=parse_date_range,
+        help="publish data processed after given time",
+    )
     return parser.parse_args()
 
 
@@ -79,36 +138,69 @@ def main(args):
                 data_saver=JsonItemSaver(),
             )
         elif args.command == "publication":
-            if args.published_at:
-                day_start = args.published_at.timestamp()
-                logger.info(day_start)
-                day_end = day_start + 86400
-                data_getter = QueryGetter(
-                    queries.get_publications_by_producer_ranged_by_published_at,
-                    producer_id=of_uuid(args.producer),
-                    start=day_start,
-                    end=day_end,
-                )
-            elif args.processed_at:
-                logger.debug(
-                    "publications by %s processed between %s and %s",
-                    args.producer,
-                    args.processed_at[0],
-                    args.processed_at[1],
-                )
-                data_getter = QueryGetter(
-                    queries.get_publications_by_producer_ranged_by_processed_at,
-                    producer_id=of_uuid(args.producer),
-                    start=args.processed_at[0].timestamp(),
-                    end=args.processed_at[1].timestamp() - 1,
-                )
-            run_batch(
-                data_getter=data_getter,
-                processor=partial(process_publication_item, full_text=args.full_text),
-                data_saver=JsonItemSaver(),
+            producer = to_producer(
+                queries.get_producer(producer_id=of_uuid(args.producer))
             )
+            if args.drive and args.drive != "local":
+                row = queries.get_drive_by_name(name=args.drive)
+                if row is None:
+                    raise RuntimeError(f"non-existent drive '{drive}'")
+                gdrive = GoogleDrive(**row)
+                if args.published_at:
+                    publish_to_drive(
+                        drive=gdrive,
+                        producer=producer,
+                        published_at=args.published_at[0],
+                        full_text=args.full_text,
+                    )
+                elif args.processed_at:
+                    for (
+                        row
+                    ) in queries.get_published_date_by_producer_ranged_by_processed_at(
+                        producer_id=of_uuid(args.producer),
+                        start=args.processed_at[0].timestamp(),
+                        end=args.processed_at[1].timestamp() - 1,
+                    ):
+                        publish_to_drive(
+                            drive=gdrive,
+                            producer=producer,
+                            published_at=row["published_date"],
+                            full_text=args.full_text,
+                        )
+                else:
+                    raise RuntimeError("no --published-at or --processed-at specified")
+            else:
+                if args.published_at:
+                    data_getter = QueryGetter(
+                        queries.get_publications_by_producer_ranged_by_published_at,
+                        producer_id=of_uuid(args.producer),
+                        start=args.published_at[0].timestamp(),
+                        end=args.published_at[1].timestamp() - 1,
+                    )
+                elif args.processed_at:
+                    logger.debug(
+                        "publications by %s processed between %s and %s",
+                        args.producer,
+                        args.processed_at[0],
+                        args.processed_at[1],
+                    )
+                    data_getter = QueryGetter(
+                        queries.get_publications_by_producer_ranged_by_processed_at,
+                        producer_id=of_uuid(args.producer),
+                        start=args.processed_at[0].timestamp(),
+                        end=args.processed_at[1].timestamp() - 1,
+                    )
+                else:
+                    raise RuntimeError("no --published-at or --processed-at specified")
+                run_batch(
+                    data_getter=data_getter,
+                    processor=partial(
+                        process_publication_item, full_text=args.full_text
+                    ),
+                    data_saver=JsonItemSaver(),
+                )
         else:
-            raise RuntimeError(f"Unknown command '{args.command}'")
+            raise RuntimeError(f"unknown command '{args.command}'")
         return 0
     except:
         logger.error(traceback.format_exc())

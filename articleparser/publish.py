@@ -45,6 +45,19 @@ def process_publication_item(row, full_text=False):
 
 
 class JsonItemSaver:
+    def __init__(self, filename=None):
+        self.filename = filename
+        self.fh = None
+
     def save(self, item):
-        json.dump(item.item, sys.stdout, ensure_ascii=False)
-        sys.stdout.write("\n")
+        if not self.fh:
+            if self.filename:
+                self.fh = open(self.filename, "w")
+            else:
+                self.fh = sys.stdout
+        json.dump(item.item, self.fh, ensure_ascii=False)
+        self.fh.write("\n")
+
+    def close(self):
+        if self.fh:
+            self.fh.close()
