@@ -36,17 +36,6 @@ def get_all_unprocessed_articles(scraper_db, parser_db, args):
     )
 
 
-def get_scraper(db, scraper_name):
-    sc = db.get_scraper_by_name(scraper_name=scraper_name)
-    return scraper.ScraperDb(
-        sc["scraper_name"],
-        os.getenv(sc["db_url_var"]),
-        site_table_name=sc["site_table_name"],
-        article_table_name=sc["article_table_name"],
-        snapshot_table_name=sc["snapshot_table_name"],
-    )
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -98,12 +87,9 @@ def main(args):
     parser_db.connect(os.getenv("DB_URL"))
     try:
         sc = parser_db.get_scraper_by_name(scraper_name=args.scraper_name)
+        sc["data"] = db.to_json(sc["data"])
         scraper_db = scraper.ScraperDb(
-            sc["scraper_name"],
-            os.getenv(sc["db_url_var"]),
-            site_table_name=sc["site_table_name"],
-            article_table_name=sc["article_table_name"],
-            snapshot_table_name=sc["snapshot_table_name"],
+            sc["scraper_name"], os.getenv(sc["data"]["db_url_var"]), sc["data"],
         )
 
         if args.command == "producer":

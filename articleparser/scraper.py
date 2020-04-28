@@ -19,17 +19,20 @@ class Site(NamedTuple):
 class ScraperDb:
     engine: sa.engine.Engine
 
-    def __init__(
-        self, name, db_url, site_table_name, article_table_name, snapshot_table_name
-    ):
+    def __init__(self, name, db_url, data):
+        site_table_name, article_table_name, snapshot_table_name = (
+            data["site_table_name"],
+            data["article_table_name"],
+            data["snapshot_table_name"],
+        )
         self.engine = sa.create_engine(db_url)
         self.metadata = sa.MetaData(bind=self.engine)
         self.metadata.reflect()
         self._conn = None
         self.table_names = {
-            "site": site_table_name,
-            "article": article_table_name,
-            "snapshot": snapshot_table_name,
+            "site": data["site_table_name"],
+            "article": data["article_table_name"],
+            "snapshot": data["snapshot_table_name"],
         }
 
     @property
