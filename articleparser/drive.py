@@ -69,7 +69,7 @@ class GoogleDrive:
                 service.files()
                 .create(
                     body={
-                        "name": f"{producer['producer_id']}-{producer['name']}",
+                        "name": f"{producer['name']}-{producer['producer_id']}",
                         "mimeType": "application/vnd.google-apps.folder",
                         "parents": [self.data["dirs"]["root"]],
                     },
