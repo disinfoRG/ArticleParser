@@ -121,6 +121,9 @@ def parse_args():
         "--drive", help="Google Drive name to publish datasets", default="local"
     )
     pub_cmd.add_argument(
+        "--service-account", help="Service account file to access Google Drive"
+    )
+    pub_cmd.add_argument(
         "--processed-at",
         type=parse_date_range,
         help="publish data processed after given time",
@@ -145,7 +148,7 @@ def main(args):
                 row = queries.get_drive_by_name(name=args.drive)
                 if row is None:
                     raise RuntimeError(f"non-existent drive '{drive}'")
-                gdrive = GoogleDrive(**row)
+                gdrive = GoogleDrive(**row, service_account=args.service_account)
                 if args.published_at:
                     publish_to_drive(
                         drive=gdrive,

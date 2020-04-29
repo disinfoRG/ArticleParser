@@ -2,31 +2,13 @@ import pickle
 from pathlib import Path
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+from google.oauth2 import service_account
 import json
 
-# If modifying these scopes, delete the file token.pickle.
-SCOPES = [
+scopes = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",
     "https://www.googleapis.com/auth/drive.file",
 ]
-
-
-def list_files(service):
-    results = (
-        service.files()
-        .list(pageSize=20, fields="nextPageToken, files(id, name)")
-        .execute()
-    )
-    items = results.get("files", [])
-
-    if not items:
-        print("No files found.")
-    else:
-        print("Files:")
-        for item in items:
-            print("{0} ({1})".format(item["name"], item["id"]))
 
 
 def upload_file(service, src, dst, parent=None, file_id=None):
@@ -60,29 +42,17 @@ def upload_file(service, src, dst, parent=None, file_id=None):
     return f.get("id")
 
 
-def get_creds(credentials_path="credentials.json", saved_token_path="token.pickle"):
-    creds = None
-    saved_token = Path(saved_token_path)
-    if saved_token.exists():
-        with saved_token.open("rb") as token:
-            creds = pickle.load(token)
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(credentials_path, SCOPES)
-            creds = flow.run_local_server(port=0)
-        with saved_token.open("wb") as token:
-            pickle.dump(creds, token)
-    return creds
+def get_creds(keyfile):
+    return service_account.Credentials.from_service_account_file(keyfile, scopes=scopes)
 
 
 class GoogleDrive:
     name: str
 
-    def __init__(self, drive_id, name, data):
+    def __init__(self, drive_id, name, data, service_account):
         self.name = name
         self.data = json.loads(data)
+        self.service_account = service_account
 
     def has_producer_dir(self, producer):
         return str(producer["producer_id"]) in self.data["dirs"]["producers"]
@@ -91,7 +61,7 @@ class GoogleDrive:
         return self.data["dirs"]["producers"][str(producer["producer_id"])]
 
     def make_producer_dir(self, producer):
-        creds = get_creds()
+        creds = get_creds(self.service_account)
         service = build("drive", "v3", credentials=creds)
         parent_dir_id = None
         if str(producer["producer_id"]) not in self.data["dirs"]["producers"]:
@@ -121,7 +91,7 @@ class GoogleDrive:
         return self.data["files"]["producers"][str(producer["producer_id"])][stem]
 
     def upload(self, parent_dir_id, filename, file_id=None):
-        creds = get_creds()
+        creds = get_creds(self.service_account)
         service = build("drive", "v3", credentials=creds)
         return upload_file(
             service, filename, filename, parent=parent_dir_id, file_id=file_id
