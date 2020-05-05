@@ -1,7 +1,7 @@
 import unittest as t
 from pathlib import Path
-from parser import Snapshot
-import parser.publication as P
+from articleparser import Snapshot
+import articleparser.publication as P
 
 
 def load_snapshot(filename):

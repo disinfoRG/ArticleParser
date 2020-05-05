@@ -1,6 +1,6 @@
 import os
 import unittest as t
-import parser.scraper as scraper
+import articleparser.scraper as scraper
 
 
 class TestScraperDb(t.TestCase):

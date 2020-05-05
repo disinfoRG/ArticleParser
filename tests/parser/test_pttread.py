@@ -1,8 +1,8 @@
 import unittest as t
 from pathlib import Path
-from parser import Snapshot
-import parser.publication as P
-import parser.pttread as PTT
+from articleparser import Snapshot
+import articleparser.publication as P
+import articleparser.pttread as PTT
 
 
 class PTTReadTest(t.TestCase):
