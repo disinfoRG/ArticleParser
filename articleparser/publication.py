@@ -13,6 +13,7 @@ from .gatrack import parse_ga_id
 from . import db
 from . import ptt
 from . import pttread
+from . import appledaily
 from . import scraper
 from . import version, Soups, Snapshot
 
@@ -264,6 +265,7 @@ def parse_publication(soups: Soups):
 
 
 parsers = {
+    "appledaily": appledaily.parse_publication,
     "ptt": ptt.parse_publication,
     "pttread": pttread.parse_publication,
     "default": parse_publication,
@@ -275,6 +277,8 @@ def process_item(snapshot: Snapshot, parser: str = "default"):
     if parser == "default":
         if soups.snapshot.article_type == "PTT":
             return parsers["ptt"](soups)
+        elif "appledaily" in soups.snapshot.url:
+            return parsers["appledaily"](soups)
         else:
             return parsers["default"](soups)
     else:
