@@ -37,12 +37,8 @@ def parse_date_range(value):
         return (d, d + datetime.timedelta(days=1))
 
 
-def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tmp"):
-    logger.debug("%s %s %s %s", drive, producer, published_at, full_text)
-    tmp_dir = Path(tmp_dir)
-    tmp_dir.mkdir(exist_ok=True)
-    output = tmp_dir / published_at.strftime("%Y-%m-%d.jsonl")
-    outzip = tmp_dir / published_at.strftime("%Y-%m-%d.jsonl.zip")
+def publish_one_day(published_at, producer, output_dir, full_text=False):
+    output = output_dir / published_at.strftime("%Y-%m-%d.jsonl")
     data_getter = QueryGetter(
         queries.get_publications_by_producer_ranged_by_published_at,
         producer_id=of_uuid(producer["producer_id"]),
@@ -54,10 +50,22 @@ def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tm
         processor=partial(process_publication_item, full_text=full_text),
         data_saver=JsonItemSaver(filename=output),
     )
-    with zipfile.ZipFile(outzip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.write(output, arcname=output.name)
+
+
+def clean_output(output_dir, outzip):
+    for f in output_dir.iterdir():
+        f.unlink()
+    if outzip.exists():
+        outzip.unlink()
+
+
+def make_parent_dir(drive, producer, exist_ok=True):
     parent_dir_id = None
     if not drive.has_producer_dir(producer):
+        if not exist_ok:
+            raise RuntimeError(
+                f"producer does not have an upload dir: {producer['producer_id']}"
+            )
         parent_dir_id = drive.make_producer_dir(producer)
         r = queries.update_drive_producer_dir_id(
             name=drive.name,
@@ -67,15 +75,18 @@ def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tm
         logger.debug("%d", r)
     else:
         parent_dir_id = drive.get_producer_dir(producer)
+    return parent_dir_id
 
+
+def upload_to_drive(drive, producer, parent_dir_id, outzip):
     upload_id = None
-    if not drive.has_producer_file(producer, output.stem):
+    if not drive.has_producer_file(producer, outzip.stem):
         upload_id = drive.upload(parent_dir_id, filename=outzip)
-        logger.debug("%s %s %s", parent_dir_id, upload_id, output.stem)
+        logger.debug("%s %s %s", parent_dir_id, upload_id, outzip.stem)
         r = queries.update_drive_file_id(
             name=drive.name,
             producer_id=str(producer["producer_id"]),
-            filename=output.stem,
+            filename=outzip.stem,
             file_id=upload_id,
         )
         logger.debug("%d", r)
@@ -83,11 +94,29 @@ def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tm
         upload_id = drive.upload(
             parent_dir_id,
             filename=outzip,
-            file_id=drive.get_producer_file(producer, output.stem),
+            file_id=drive.get_producer_file(producer, outzip.stem),
         )
+    return upload_id
 
-    output.unlink()
-    outzip.unlink()
+
+def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tmp"):
+    logger.debug("%s %s %s %s", drive, producer, published_at, full_text)
+
+    tmp_dir = Path(tmp_dir)
+    tmp_dir.mkdir(exist_ok=True)
+    outzip = Path(published_at.strftime("%Y-%m-%d.jsonl.zip"))
+    clean_output(tmp_dir, outzip)
+
+    publish_one_day(published_at, producer, output_dir=tmp_dir, full_text=full_text)
+
+    with zipfile.ZipFile(outzip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for f in tmp_dir.iterdir():
+            zf.write(f, arcname=f.name)
+
+    parent_dir_id = make_parent_dir(drive, producer, exist_ok=True)
+    upload_id = upload_to_drive(drive, producer, parent_dir_id, outzip)
+
+    clean_output(tmp_dir, outzip)
 
 
 def parse_args():
