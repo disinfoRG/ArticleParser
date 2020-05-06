@@ -19,7 +19,7 @@ from articleparser.publish import (
     process_publication_item,
     JsonItemSaver,
 )
-from articleparser.db import of_uuid, of_date, to_producer
+from articleparser.db import of_uuid, of_datetime, to_producer
 from articleparser.drive import GoogleDrive
 from articleparser.dateutil import *
 
@@ -40,13 +40,13 @@ def parse_date_range(value: str) -> DateRange:
             return DateRange(start=d, end=d)
 
 
-def publish_one_day(published_at, producer, output_dir, full_text=False):
+def publish_one_day(published_at: date, producer, output_dir, full_text=False):
     output = output_dir / published_at.strftime("%Y-%m-%d.jsonl")
     data_getter = QueryGetter(
         queries.get_publications_by_producer_ranged_by_published_at,
         producer_id=of_uuid(producer["producer_id"]),
-        start=of_date(published_at),
-        end=of_date(published_at) + 86400 - 1,
+        start=of_datetime(day_start(published_at)),
+        end=of_datetime(day_end(published_at)),
     )
     run_batch(
         data_getter=data_getter,
@@ -109,10 +109,12 @@ def publish_to_drive(
 
     tmp_dir = Path(tmp_dir)
     tmp_dir.mkdir(exist_ok=True)
-    outzip = Path(published_at.strftime("%Y-%m-%d.zip"))
+    outzip = Path(published_at.isoformat() + ".zip")
     clean_output(tmp_dir, outzip)
 
-    publish_one_day(published_at, producer, output_dir=tmp_dir, full_text=full_text)
+    for day in published_at.iterdate():
+        logger.debug(day)
+        publish_one_day(day, producer, output_dir=tmp_dir, full_text=full_text)
 
     with zipfile.ZipFile(outzip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
         for f in tmp_dir.iterdir():
@@ -197,8 +199,8 @@ def main(args):
                         row
                     ) in queries.get_published_month_by_producer_ranged_by_processed_at(
                         producer_id=of_uuid(args.producer),
-                        start=args.processed_at.start_timestamp(),
-                        end=args.processed_at.end_timestamp(),
+                        start=of_datetime(args.processed_at.start_datetime()),
+                        end=of_datetime(args.processed_at.end_datetime()),
                     ):
                         logger.debug("publishing %s", row["published_month"])
                         publish_to_drive(
@@ -214,8 +216,8 @@ def main(args):
                     data_getter = QueryGetter(
                         queries.get_publications_by_producer_ranged_by_published_at,
                         producer_id=of_uuid(args.producer),
-                        start=args.published_at.start_timestamp(),
-                        end=args.published_at.end_timestamp(),
+                        start=of_datetime(args.published_at.start_datetime()),
+                        end=of_datetime(args.published_at.end_datetime()),
                     )
                 elif args.processed_at:
                     logger.debug(
@@ -227,8 +229,8 @@ def main(args):
                     data_getter = QueryGetter(
                         queries.get_publications_by_producer_ranged_by_processed_at,
                         producer_id=of_uuid(args.producer),
-                        start=args.processed_at.start_timestamp(),
-                        end=args.processed_at.end_timestamp(),
+                        start=of_datetime(args.processed_at.start_datetime()),
+                        end=of_datetime(args.processed_at.end_datetime()),
                     )
                 else:
                     raise RuntimeError("no --published-at or --processed-at specified")
