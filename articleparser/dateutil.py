@@ -26,8 +26,8 @@ class DateRange:
         self.start = start
         self.end = end
 
-    def __str__(self):
-        return str((self.start, self.end))
+    def __repr__(self):
+        return "DateRange(%s, %s)" % (repr(self.start), repr(self.end))
 
     def start_datetime(self):
         return day_start(self.start)
@@ -55,6 +55,9 @@ class Month(DateRange):
     def __init__(self, year: int, month: int):
         self.start = date(year=year, month=month, day=1)
         self.end = self.start + timedelta(days=calendar.monthrange(year, month)[1] - 1)
+
+    def __repr__(self):
+        return "Month(%s, %s)" % (self.start.year, self.start.month)
 
     @classmethod
     def fromisoformat(cls, value):

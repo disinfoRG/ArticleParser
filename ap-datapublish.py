@@ -28,13 +28,16 @@ logger = logging.getLogger(__name__)
 queries = pugsql.module("queries")
 
 
-def parse_date_range(value):
+def parse_date_range(value: str) -> DateRange:
     if value.find(":") >= 0:
         start, end = value.split(":", 1)
-        return (dateparser.parse(start), dateparser.parse(end))
+        return DateRange(start=dateparser.parse(start), end=dateparser.parse(end))
     else:
-        d = dateparser.parse(value)
-        return (d, d + timedelta(days=1))
+        try:
+            return Month.fromisoformat(value)
+        except ValueError:
+            d = dateparser.parse(value)
+            return DateRange(start=d, end=d)
 
 
 def publish_one_day(published_at, producer, output_dir, full_text=False):
@@ -99,7 +102,9 @@ def upload_to_drive(drive, producer, parent_dir_id, outzip):
     return upload_id
 
 
-def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tmp"):
+def publish_to_drive(
+    drive, producer, published_at: Month, full_text=False, tmp_dir="tmp"
+):
     logger.debug("%s %s %s %s", drive, producer, published_at, full_text)
 
     tmp_dir = Path(tmp_dir)
@@ -179,24 +184,27 @@ def main(args):
                     raise RuntimeError(f"non-existent drive '{drive}'")
                 gdrive = GoogleDrive(**row, service_account=args.service_account)
                 if args.published_at:
+                    if not isinstance(args.published_at, Month):
+                        raise RuntimeError("Google drive only stores monthly archive")
                     publish_to_drive(
                         drive=gdrive,
                         producer=producer,
-                        published_at=args.published_at[0],
+                        published_at=args.published_at,
                         full_text=args.full_text,
                     )
                 elif args.processed_at:
                     for (
                         row
-                    ) in queries.get_published_date_by_producer_ranged_by_processed_at(
+                    ) in queries.get_published_month_by_producer_ranged_by_processed_at(
                         producer_id=of_uuid(args.producer),
-                        start=args.processed_at[0].timestamp(),
-                        end=args.processed_at[1].timestamp() - 1,
+                        start=args.processed_at.start_timestamp(),
+                        end=args.processed_at.end_timestamp(),
                     ):
+                        logger.debug("publishing %s", row["published_month"])
                         publish_to_drive(
                             drive=gdrive,
                             producer=producer,
-                            published_at=row["published_date"],
+                            published_at=Month.fromisoformat(row["published_month"]),
                             full_text=args.full_text,
                         )
                 else:
@@ -206,21 +214,21 @@ def main(args):
                     data_getter = QueryGetter(
                         queries.get_publications_by_producer_ranged_by_published_at,
                         producer_id=of_uuid(args.producer),
-                        start=args.published_at[0].timestamp(),
-                        end=args.published_at[1].timestamp() - 1,
+                        start=args.published_at.start_timestamp(),
+                        end=args.published_at.end_timestamp(),
                     )
                 elif args.processed_at:
                     logger.debug(
                         "publications by %s processed between %s and %s",
                         args.producer,
-                        args.processed_at[0],
-                        args.processed_at[1],
+                        args.processed_at.start,
+                        args.processed_at.end,
                     )
                     data_getter = QueryGetter(
                         queries.get_publications_by_producer_ranged_by_processed_at,
                         producer_id=of_uuid(args.producer),
-                        start=args.processed_at[0].timestamp(),
-                        end=args.processed_at[1].timestamp() - 1,
+                        start=args.processed_at.start_timestamp(),
+                        end=args.processed_at.end_timestamp(),
                     )
                 else:
                     raise RuntimeError("no --published-at or --processed-at specified")
