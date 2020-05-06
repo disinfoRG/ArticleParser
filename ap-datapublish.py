@@ -10,7 +10,6 @@ import argparse
 from pathlib import Path
 from uuid import UUID
 import dateparser
-import datetime
 import pugsql
 import zipfile
 from functools import partial
@@ -22,6 +21,7 @@ from articleparser.publish import (
 )
 from articleparser.db import of_uuid, of_date, to_producer
 from articleparser.drive import GoogleDrive
+from articleparser.dateutil import *
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
@@ -34,7 +34,7 @@ def parse_date_range(value):
         return (dateparser.parse(start), dateparser.parse(end))
     else:
         d = dateparser.parse(value)
-        return (d, d + datetime.timedelta(days=1))
+        return (d, d + timedelta(days=1))
 
 
 def publish_one_day(published_at, producer, output_dir, full_text=False):
@@ -104,7 +104,7 @@ def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tm
 
     tmp_dir = Path(tmp_dir)
     tmp_dir.mkdir(exist_ok=True)
-    outzip = Path(published_at.strftime("%Y-%m-%d.jsonl.zip"))
+    outzip = Path(published_at.strftime("%Y-%m-%d.zip"))
     clean_output(tmp_dir, outzip)
 
     publish_one_day(published_at, producer, output_dir=tmp_dir, full_text=full_text)
