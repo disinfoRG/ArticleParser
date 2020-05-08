@@ -73,7 +73,7 @@ class ParseGAIDTest(t.TestCase):
                 snapshot = load_snapshot(case["f"])
                 soups = P.parse_soups(snapshot)
                 ga_id = P.parse_ga_id(soups)
-                self.assertEqual(case["ga-id"], ga_id, case["f"])
+                self.assertEqual(set(case["ga-id"]), set(ga_id), case["f"])
             except Exception as e:
                 self.fail(f"{e}: {case}")
 
