@@ -9,9 +9,11 @@ class TestScraperDb(t.TestCase):
         cls.db = scraper.ScraperDb(
             "TestScraper",
             os.getenv("SCRAPER_DB_URL"),
-            site_table_name="Site",
-            article_table_name="Article",
-            snapshot_table_name="ArticleSnapshot",
+            {
+                "site_table_name": "Site",
+                "article_table_name": "Article",
+                "snapshot_table_name": "ArticleSnapshot",
+            },
         )
 
     @classmethod
@@ -31,9 +33,11 @@ class TestSDK(t.TestCase):
         cls.db = scraper.ScraperDb(
             "TestScraper",
             os.getenv("SCRAPER_DB_URL"),
-            site_table_name="Site",
-            article_table_name="Article",
-            snapshot_table_name="ArticleSnapshot",
+            {
+                "site_table_name": "Site",
+                "article_table_name": "Article",
+                "snapshot_table_name": "ArticleSnapshot",
+            },
         )
 
     @classmethod
@@ -41,12 +45,11 @@ class TestSDK(t.TestCase):
         cls.db.close()
 
     def testGetSite(self):
-        self.assertIsNone(scraper.get_site(self.db, 1337))
-        site = scraper.get_site(self.db, 1)
+        site = self.db.execute(scraper.get_site(self.db, 1)).fetchone()
         self.assertEqual(1, site["site_id"])
 
     def testGetSites(self):
-        sites = scraper.get_sites(self.db).fetchall()
+        sites = self.db.execute(scraper.get_sites(self.db)).fetchall()
         self.assertTrue(len(sites) > 0)
 
     def testGetSnapshot(self):
@@ -54,10 +57,12 @@ class TestSDK(t.TestCase):
         self.assertIsNone(snapshot)
 
     def testGetSnapshots(self):
-        for snapshot in scraper.get_snapshots(self.db, site_id=1).fetchall():
+        for snapshot in self.db.execute(
+            scraper.get_snapshots(self.db, site_id=1)
+        ).fetchall():
             self.assertEqual(1, snapshot["site_id"])
 
-        for snapshot in scraper.get_snapshots(
-            self.db, article_ids=[1, 2, 3]
+        for snapshot in self.db.execute(
+            scraper.get_snapshots(self.db, article_ids=[1, 2, 3])
         ).fetchall():
             self.assertTrue(snapshot["article_id"] in [1, 2, 3])
