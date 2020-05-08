@@ -10,7 +10,6 @@ import argparse
 from pathlib import Path
 from uuid import UUID
 import dateparser
-import datetime
 import pugsql
 import zipfile
 from functools import partial
@@ -20,44 +19,56 @@ from articleparser.publish import (
     process_publication_item,
     JsonItemSaver,
 )
-from articleparser.db import of_uuid, of_date, to_producer
+from articleparser.db import of_uuid, of_datetime, to_producer
 from articleparser.drive import GoogleDrive
+from articleparser.dateutil import *
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
 queries = pugsql.module("queries")
 
 
-def parse_date_range(value):
+def parse_date_range(value: str) -> DateRange:
     if value.find(":") >= 0:
         start, end = value.split(":", 1)
-        return (dateparser.parse(start), dateparser.parse(end))
+        return DateRange(start=dateparser.parse(start), end=dateparser.parse(end))
     else:
-        d = dateparser.parse(value)
-        return (d, d + datetime.timedelta(days=1))
+        try:
+            return Month.fromisoformat(value)
+        except ValueError:
+            d = dateparser.parse(value)
+            return DateRange(start=d, end=d)
 
 
-def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tmp"):
-    logger.debug("%s %s %s %s", drive, producer, published_at, full_text)
-    tmp_dir = Path(tmp_dir)
-    tmp_dir.mkdir(exist_ok=True)
-    output = tmp_dir / published_at.strftime("%Y-%m-%d.jsonl")
-    outzip = tmp_dir / published_at.strftime("%Y-%m-%d.jsonl.zip")
+def publish_one_day(published_at: date, producer, output_dir, full_text=False):
+    output = output_dir / published_at.strftime("%Y-%m-%d.jsonl")
     data_getter = QueryGetter(
         queries.get_publications_by_producer_ranged_by_published_at,
         producer_id=of_uuid(producer["producer_id"]),
-        start=of_date(published_at),
-        end=of_date(published_at) + 86400 - 1,
+        start=of_datetime(day_start(published_at)),
+        end=of_datetime(day_end(published_at)),
     )
     run_batch(
         data_getter=data_getter,
         processor=partial(process_publication_item, full_text=full_text),
         data_saver=JsonItemSaver(filename=output),
     )
-    with zipfile.ZipFile(outzip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        zf.write(output, arcname=output.name)
+
+
+def clean_output(output_dir, outzip):
+    for f in output_dir.iterdir():
+        f.unlink()
+    if outzip.exists():
+        outzip.unlink()
+
+
+def make_parent_dir(drive, producer, exist_ok=True):
     parent_dir_id = None
     if not drive.has_producer_dir(producer):
+        if not exist_ok:
+            raise RuntimeError(
+                f"producer does not have an upload dir: {producer['producer_id']}"
+            )
         parent_dir_id = drive.make_producer_dir(producer)
         r = queries.update_drive_producer_dir_id(
             name=drive.name,
@@ -67,15 +78,18 @@ def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tm
         logger.debug("%d", r)
     else:
         parent_dir_id = drive.get_producer_dir(producer)
+    return parent_dir_id
 
+
+def upload_to_drive(drive, producer, parent_dir_id, outzip):
     upload_id = None
-    if not drive.has_producer_file(producer, output.stem):
+    if not drive.has_producer_file(producer, outzip.stem):
         upload_id = drive.upload(parent_dir_id, filename=outzip)
-        logger.debug("%s %s %s", parent_dir_id, upload_id, output.stem)
+        logger.debug("%s %s %s", parent_dir_id, upload_id, outzip.stem)
         r = queries.update_drive_file_id(
             name=drive.name,
             producer_id=str(producer["producer_id"]),
-            filename=output.stem,
+            filename=outzip.stem,
             file_id=upload_id,
         )
         logger.debug("%d", r)
@@ -83,11 +97,33 @@ def publish_to_drive(drive, producer, published_at, full_text=False, tmp_dir="tm
         upload_id = drive.upload(
             parent_dir_id,
             filename=outzip,
-            file_id=drive.get_producer_file(producer, output.stem),
+            file_id=drive.get_producer_file(producer, outzip.stem),
         )
+    return upload_id
 
-    output.unlink()
-    outzip.unlink()
+
+def publish_to_drive(
+    drive, producer, published_at: Month, full_text=False, tmp_dir="tmp"
+):
+    logger.debug("%s %s %s %s", drive, producer, published_at, full_text)
+
+    tmp_dir = Path(tmp_dir)
+    tmp_dir.mkdir(exist_ok=True)
+    outzip = Path(published_at.isoformat() + ".zip")
+    clean_output(tmp_dir, outzip)
+
+    for day in published_at.iterdate():
+        logger.debug(day)
+        publish_one_day(day, producer, output_dir=tmp_dir, full_text=full_text)
+
+    with zipfile.ZipFile(outzip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for f in tmp_dir.iterdir():
+            zf.write(f, arcname=f.name)
+
+    parent_dir_id = make_parent_dir(drive, producer, exist_ok=True)
+    upload_id = upload_to_drive(drive, producer, parent_dir_id, outzip)
+
+    clean_output(tmp_dir, outzip)
 
 
 def parse_args():
@@ -150,24 +186,27 @@ def main(args):
                     raise RuntimeError(f"non-existent drive '{drive}'")
                 gdrive = GoogleDrive(**row, service_account=args.service_account)
                 if args.published_at:
+                    if not isinstance(args.published_at, Month):
+                        raise RuntimeError("Google drive only stores monthly archive")
                     publish_to_drive(
                         drive=gdrive,
                         producer=producer,
-                        published_at=args.published_at[0],
+                        published_at=args.published_at,
                         full_text=args.full_text,
                     )
                 elif args.processed_at:
                     for (
                         row
-                    ) in queries.get_published_date_by_producer_ranged_by_processed_at(
+                    ) in queries.get_published_month_by_producer_ranged_by_processed_at(
                         producer_id=of_uuid(args.producer),
-                        start=args.processed_at[0].timestamp(),
-                        end=args.processed_at[1].timestamp() - 1,
+                        start=of_datetime(args.processed_at.start_datetime()),
+                        end=of_datetime(args.processed_at.end_datetime()),
                     ):
+                        logger.debug("publishing %s", row["published_month"])
                         publish_to_drive(
                             drive=gdrive,
                             producer=producer,
-                            published_at=row["published_date"],
+                            published_at=Month.fromisoformat(row["published_month"]),
                             full_text=args.full_text,
                         )
                 else:
@@ -177,21 +216,21 @@ def main(args):
                     data_getter = QueryGetter(
                         queries.get_publications_by_producer_ranged_by_published_at,
                         producer_id=of_uuid(args.producer),
-                        start=args.published_at[0].timestamp(),
-                        end=args.published_at[1].timestamp() - 1,
+                        start=of_datetime(args.published_at.start_datetime()),
+                        end=of_datetime(args.published_at.end_datetime()),
                     )
                 elif args.processed_at:
                     logger.debug(
                         "publications by %s processed between %s and %s",
                         args.producer,
-                        args.processed_at[0],
-                        args.processed_at[1],
+                        args.processed_at.start,
+                        args.processed_at.end,
                     )
                     data_getter = QueryGetter(
                         queries.get_publications_by_producer_ranged_by_processed_at,
                         producer_id=of_uuid(args.producer),
-                        start=args.processed_at[0].timestamp(),
-                        end=args.processed_at[1].timestamp() - 1,
+                        start=of_datetime(args.processed_at.start_datetime()),
+                        end=of_datetime(args.processed_at.end_datetime()),
                     )
                 else:
                     raise RuntimeError("no --published-at or --processed-at specified")

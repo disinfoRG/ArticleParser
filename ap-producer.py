@@ -6,7 +6,6 @@ import os
 import sys
 import logging
 import traceback
-import datetime
 import argparse
 from uuid import UUID
 from articleparser import db

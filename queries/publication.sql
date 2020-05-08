@@ -56,9 +56,9 @@ WHERE
 LIMIT :limit
 OFFSET :offset
 
--- :name get_published_date_by_producer_ranged_by_processed_at :many
+-- :name get_published_month_by_producer_ranged_by_processed_at :many
 SELECT
-  DISTINCT(DATE(FROM_UNIXTIME(P.published_at))) AS published_date
+  DISTINCT(DATE_FORMAT(FROM_UNIXTIME(P.published_at), "%Y-%m")) AS published_month
 FROM publication_mapping as PM
   JOIN publication as P
   ON PM.publication_id = P.publication_id AND PM.version = P.version
