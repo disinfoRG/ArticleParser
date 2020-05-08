@@ -2,6 +2,7 @@
 Various enhancements to the standard `datetime` module.
 """
 from datetime import *
+import dateparser
 import calendar
 import re
 
@@ -68,3 +69,15 @@ class Month(DateRange):
 
     def isoformat(self):
         return "%04d-%02d" % (self.start.year, self.start.month)
+
+
+def parse_date_range(value: str) -> DateRange:
+    if value.find(":") >= 0:
+        start, end = value.split(":", 1)
+        return DateRange(start=dateparser.parse(start), end=dateparser.parse(end))
+    else:
+        try:
+            return Month.fromisoformat(value)
+        except ValueError:
+            d = dateparser.parse(value)
+            return DateRange(start=d, end=d)

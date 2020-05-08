@@ -28,18 +28,6 @@ logger = logging.getLogger(__name__)
 queries = pugsql.module("queries")
 
 
-def parse_date_range(value: str) -> DateRange:
-    if value.find(":") >= 0:
-        start, end = value.split(":", 1)
-        return DateRange(start=dateparser.parse(start), end=dateparser.parse(end))
-    else:
-        try:
-            return Month.fromisoformat(value)
-        except ValueError:
-            d = dateparser.parse(value)
-            return DateRange(start=d, end=d)
-
-
 def publish_one_day(published_at: date, producer, output_dir, full_text=False):
     output = output_dir / published_at.strftime("%Y-%m-%d.jsonl")
     data_getter = QueryGetter(
