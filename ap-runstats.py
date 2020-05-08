@@ -44,7 +44,7 @@ def parse_args():
 def main(args):
     queries.connect(os.getenv("DB_URL"))
     try:
-        # run_parser_stats(queries, args.processed_at)
+        run_parser_stats(queries, args.processed_at)
         for row in queries.get_published_date_ranged_by_processed_at(
             start=args.processed_at.start_timestamp(),
             end=args.processed_at.end_timestamp(),
