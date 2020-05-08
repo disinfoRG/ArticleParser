@@ -126,13 +126,13 @@ def main(args):
                     scraper_db, scraper.get_snapshots, article_id=args.article_id
                 )
             elif args.url is not None:
-                data_getter = DbGetter(scraper_db, scraper.get_snapshots, url=url)
+                data_getter = DbGetter(scraper_db, scraper.get_snapshots, url=args.url)
             elif args.site_id is not None:
                 data_getter = DbGetter(
                     scraper_db, scraper.get_snapshots, site_id=args.site_id
                 )
             elif args.update:
-                raise RuntimeError("Unimplementde")
+                raise RuntimeError("Unimplemented")
             else:
                 data_getter = get_all_unprocessed_articles(
                     scraper_db, parser_db, args=args

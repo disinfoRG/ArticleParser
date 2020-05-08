@@ -11,13 +11,23 @@ import json
 def parse_publication(soups: Soups):
     stash = {}
     content = None
-    javascript = soups.body.find_all("script")[-2].contents[0]
-    walker = Walker()
-    for x in walker.filter(es5(javascript), lambda node: isinstance(node, Assign)):
-        if str(x.left) == "Fusion.globalContent":
-            content = json.loads(str(x.right))["content_elements"]
-            break
-    if content:
+    target_script = None
+    for script in soups.body.find_all("script"):
+        try:
+            if "Fusion.globalContent" in script.contents[0]:
+                target_script = script.contents[0]
+                break
+        except:
+            pass
+
+    if target_script:
+        for x in Walker().filter(
+            es5(target_script), lambda node: isinstance(node, Assign)
+        ):
+            if str(x.left) == "Fusion.globalContent":
+                content = json.loads(str(x.right))["content_elements"]
+                break
+
         publication_text = [x["content"] for x in content if x.get("type") == "text"]
         publication_text_html = [
             x["content"] for x in content if x.get("type") == "raw_html"
@@ -41,7 +51,7 @@ def parse_publication(soups: Soups):
         "connect_from": None,
         "data": {
             "urls": P.parse_external_links(soups),
-            "image_urls": stash.get("image_urls", ""),
+            "image_urls": stash.get("image_urls", []),
             "hashtags": [],
             "keywords": [],
             "tags": [],
