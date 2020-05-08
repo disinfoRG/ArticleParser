@@ -8,7 +8,7 @@ from calmjs.parse.asttypes import Assign
 from calmjs.parse.walkers import Walker
 
 from .gatrack import parse_ga_id
-from .publication import parse_external_links, parse_published_at
+from . import publication as P
 
 
 def parse_publication(soups):
@@ -37,7 +37,7 @@ def parse_publication(soups):
         "version": soups.snapshot.snapshot_at,
         "site_id": soups.snapshot.site_id,
         "canonical_url": soups.snapshot.url,
-        "published_at": parse_published_at(soups),
+        "published_at": P.parse_published_at(soups),
         "first_seen_at": soups.snapshot.first_seen_at,
         "last_updated_at": soups.snapshot.last_updated_at,
         "title": stash["title"],
@@ -45,7 +45,7 @@ def parse_publication(soups):
         "author": None,
         "connect_from": None,
         "data": {
-            "urls": parse_external_links(soups),
+            "urls": P.parse_external_links(soups),
             "image_urls": stash.get("image_urls", ""),
             "hashtags": [],
             "keywords": [],
