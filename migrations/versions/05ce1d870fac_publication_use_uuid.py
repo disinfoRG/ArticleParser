@@ -44,7 +44,11 @@ def upgrade():
     )
 
     op.alter_column(
-        "publication", "publication_id", autoincrement=False, existing_type=sa.Integer
+        "publication",
+        "publication_id",
+        autoincrement=False,
+        existing_type=sa.Integer,
+        nullable=False,
     )
     op.execute(
         "ALTER TABLE publication DROP PRIMARY KEY, ADD PRIMARY KEY (publication_uuid)"
