@@ -221,8 +221,8 @@ def parse_published_at(soups: Soups):
 
 def parse_soups(snapshot: Snapshot) -> Soups:
     doc = Document(snapshot.raw_data)
-    body = BeautifulSoup(snapshot.raw_data, "html.parser")
-    summary = BeautifulSoup(doc.summary(), "html.parser")
+    body = BeautifulSoup(snapshot.raw_data, "html5lib")
+    summary = BeautifulSoup(doc.summary(), "html5lib")
     metatags = parse_meta_tags(body)
     metadata = parse_metadata(snapshot.raw_data)
     return Soups(

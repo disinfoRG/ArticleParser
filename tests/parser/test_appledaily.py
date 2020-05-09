@@ -42,3 +42,11 @@ class AppledailyTest(t.TestCase):
             "https://arc-photo-appledaily.s3.amazonaws.com/ap-ne-1-prod/public/3XOWF3QRUZJYODGW6YYFO4CLSA.jpg"
             in p["data"]["image_urls"]
         )
+
+    def test_parse_publication3(self):
+        snapshot = load_snapshot("snapshot000104-3.html")
+        soups = P.parse_soups(snapshot)
+        p = appledaily.parse_publication(soups)
+        self.assertEqual("【暖心文】專營「不賺錢路線」　花蓮鳳榮行動超市駛進偏鄉 ｜ 蘋果新聞網 ｜ 蘋果日報 ", p["title"])
+        self.assertEqual(p["publication_text"], "")
+        self.assertEqual(p["data"]["image_urls"], [])
