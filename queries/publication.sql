@@ -111,13 +111,13 @@ SELECT
 FROM publication_mapping as PM
   JOIN publication as P
   ON PM.publication_id = P.publication_id AND PM.version = P.version
-WHERE PM.article_id = :article_id
+WHERE PM.scraper_id = :scraper_id AND PM.article_id = :article_id
 ORDER BY P.version ASC
 
 -- :name get_publication_id_by_article_id :one
 SELECT DISTINCT(HEX(publication_id)) AS publication_id
 FROM publication_mapping
-WHERE article_id = :article_id
+WHERE scraper_id = :scraper_id AND article_id = :article_id
 
 -- :name insert_publication :insert
 INSERT INTO publication

@@ -359,7 +359,7 @@ def saver(parser_db, item, scraper):
     publication["producer_id"] = producer["producer_id"]
     with parser_db.transaction():
         publication_id = parser_db.get_publication_id_by_article_id(
-            article_id=article_snapshot["article_id"]
+            scraper_id=scraper["scraper_id"], article_id=article_snapshot["article_id"]
         )
         if publication_id is None:
             logger.debug(
@@ -377,7 +377,8 @@ def saver(parser_db, item, scraper):
         else:
             publication_id = publication_id["publication_id"]
             existing_pub = parser_db.get_publication_by_article_id(
-                article_id=article_snapshot["article_id"]
+                scraper_id=scraper["scraper_id"],
+                article_id=article_snapshot["article_id"],
             )
             if is_new_version(existing_pub, publication):
                 publication["publication_id"] = publication_id
