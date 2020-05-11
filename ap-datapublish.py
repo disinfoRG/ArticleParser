@@ -104,6 +104,10 @@ def publish_to_drive(
         logger.debug(day)
         publish_one_day(day, producer, output_dir=tmp_dir, full_text=full_text)
 
+    if len(list(tmp_dir.iterdir())) == 0:
+        logger.debug("empty archive; done")
+        return
+
     with zipfile.ZipFile(outzip, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
         for f in tmp_dir.iterdir():
             zf.write(f, arcname=f.name)
