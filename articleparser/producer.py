@@ -5,6 +5,7 @@ import datetime
 from uuid import uuid4
 from . import scraper
 from . import version
+from . import db
 from .scraper import Site
 
 name = "parser.producer"
@@ -12,7 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 def process_item(site: Site):
-    return {"name": site.name, "classification": site.type, "url": site.url, "data": {}}
+    return {
+        "name": site.name,
+        "classification": site.type,
+        "url": site.url,
+        "data": {"identifiers": {}},
+    }
 
 
 def saver(queries, item, scraper):
@@ -33,7 +39,9 @@ def saver(queries, item, scraper):
             )
         else:
             producer_id = producer["producer_id"] = str(uuid4()).replace("-", "")
-            queries.insert_producer(producer)
+            queries.insert_producer(
+                {**producer, "data": db.of_json(producer["data"]),}
+            )
             logger.debug(
                 "created producer %s from site '%s' (%s)",
                 producer_id,
