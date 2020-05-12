@@ -4,6 +4,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2 import service_account
 import json
+import urllib.parse
 
 scopes = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",
@@ -65,11 +66,12 @@ class GoogleDrive:
         service = build("drive", "v3", credentials=creds)
         parent_dir_id = None
         if str(producer["producer_id"]) not in self.data["dirs"]["producers"]:
+            host = urllib.parse.urlparse(producer["url"]).netloc
             r = (
                 service.files()
                 .create(
                     body={
-                        "name": f"{producer['name']}-{producer['producer_id']}",
+                        "name": f"{producer['name']}-{host}-{producer['producer_id']}",
                         "mimeType": "application/vnd.google-apps.folder",
                         "parents": [self.data["dirs"]["root"]],
                     },
