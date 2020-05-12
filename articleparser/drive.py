@@ -65,13 +65,14 @@ class GoogleDrive:
         creds = get_creds(self.service_account)
         service = build("drive", "v3", credentials=creds)
         parent_dir_id = None
+        host = urllib.parse.urlparse(producer["url"]).netloc
+        dirname = f"{producer['name']} ({host}) {producer['producer_id']}"
         if str(producer["producer_id"]) not in self.data["dirs"]["producers"]:
-            host = urllib.parse.urlparse(producer["url"]).netloc
             r = (
                 service.files()
                 .create(
                     body={
-                        "name": f"{producer['name']}-{host}-{producer['producer_id']}",
+                        "name": dirname,
                         "mimeType": "application/vnd.google-apps.folder",
                         "parents": [self.data["dirs"]["root"]],
                     },
@@ -84,6 +85,7 @@ class GoogleDrive:
             self.data["files"]["producers"][str(producer["producer_id"])] = {}
         else:
             parent_dir_id = self.data["dirs"]["producers"][str(producer["producer_id"])]
+            service.files().update(fileId=parent_dir_id, name=dirname).execute()
         return parent_dir_id
 
     def has_producer_file(self, producer, stem):
