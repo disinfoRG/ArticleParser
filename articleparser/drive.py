@@ -85,7 +85,6 @@ class GoogleDrive:
             self.data["files"]["producers"][str(producer["producer_id"])] = {}
         else:
             parent_dir_id = self.data["dirs"]["producers"][str(producer["producer_id"])]
-            service.files().update(fileId=parent_dir_id, name=dirname).execute()
         return parent_dir_id
 
     def has_producer_file(self, producer, stem):
