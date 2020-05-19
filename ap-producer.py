@@ -51,7 +51,14 @@ def main(args):
                 data = queries.get_producer_with_stats(
                     producer_id=db.of_uuid(producer_id)
                 )
-                print(tabulate(db.to_producer(data).items()))
+                print(
+                    tabulate(
+                        [
+                            *db.to_producer(data).items(),
+                            ("publication_count", data["publication_count"]),
+                        ]
+                    )
+                )
         else:
             raise RuntimeError(f"Unknown command '{args.command}'")
         return 0
