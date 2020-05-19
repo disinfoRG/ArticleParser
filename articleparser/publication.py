@@ -3,7 +3,6 @@ from readability import Document
 import datetime
 import json
 import uuid
-import dateparser
 import extruct
 import re
 
@@ -17,6 +16,7 @@ from . import appledaily
 from . import toutiao
 from . import scraper
 from . import version, Soups, Snapshot
+from .dateutil import parsedatetime
 
 name = "parser.publication"
 
@@ -92,9 +92,9 @@ def parse_published_at_from_jsonld(jsonld):
             ]
         ):
             if "datePublished" in jsonld:
-                return dateparser.parse(jsonld["datePublished"])
+                return parsedatetime(jsonld["datePublished"])
         if "pubDate" in jsonld:
-            return dateparser.parse(jsonld["pubDate"])
+            return parsedatetime(jsonld["pubDate"])
         return None
 
     for item in jsonld:
@@ -121,7 +121,7 @@ def parse_published_at_from_microdata(microdata):
         ):
             for prop in ["datePublished", "dateModified"]:
                 if prop in microdata["properties"]:
-                    return dateparser.parse(microdata["properties"][prop])
+                    return parsedatetime(microdata["properties"][prop])
         return None
 
     for item in microdata:
@@ -136,7 +136,7 @@ def parse_published_at_from_rdfa(rdfa):
         if "article:published_time" in rdfa:
             for item in rdfa["article:published_time"]:
                 if "@value" in item:
-                    return dateparser.parse(item["@value"])
+                    return parsedatetime(item["@value"])
         return None
 
     for item in rdfa:
@@ -150,7 +150,7 @@ def parse_published_at_from_opengraph(og):
     def parse_(og):
         for prop in og["properties"]:
             if prop[0] == "article:published_time":
-                return dateparser.parse(prop[1])
+                return parsedatetime(prop[1])
         return None
 
     for item in og:
@@ -164,7 +164,7 @@ def parse_published_at_from_text(soups: Soups):
     dt_pat = re.compile("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
     m = dt_pat.search(str(soups.body))
     if m is not None:
-        return dateparser.parse(m.group(1))
+        return parsedatetime(m.group(1))
     return None
 
 
@@ -176,7 +176,7 @@ def parse_published_at_from_meta_tags(soups: Soups):
         "pubdate",
     ]:
         if tag_name in soups.metatags:
-            d = dateparser.parse(soups.metatags[tag_name])
+            d = parsedatetime(soups.metatags[tag_name])
             if d is not None:
                 return d
     return None
@@ -212,7 +212,7 @@ def parse_published_at(soups: Soups):
     ## <https://www.chinapress.com.my/>
     tags = soups.body.find_all(id="article_datetime")
     if len(tags) > 0:
-        d = dateparser.parse(tags[0].get_text())
+        d = parsedatetime(tags[0].get_text())
         if d is not None:
             published_at = d.timestamp()
 

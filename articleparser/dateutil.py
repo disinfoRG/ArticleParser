@@ -7,6 +7,23 @@ import calendar
 import re
 
 
+def parsedate(value: str) -> date:
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        pass
+    d = dateparser.parse(value)
+    return date(d.year, d.month, d.day)
+
+
+def parsedatetime(value: str) -> datetime:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        pass
+    return dateparser.parse(value)
+
+
 def day_start(day: date) -> datetime:
     return datetime.combine(day, datetime.min.time())
 
@@ -74,10 +91,10 @@ class Month(DateRange):
 def parse_date_range(value: str) -> DateRange:
     if value.find(":") >= 0:
         start, end = value.split(":", 1)
-        return DateRange(start=dateparser.parse(start), end=dateparser.parse(end))
+        return DateRange(start=parsedate(start), end=parsedate(end))
     else:
         try:
             return Month.fromisoformat(value)
         except ValueError:
-            d = dateparser.parse(value)
+            d = parsedate(value)
             return DateRange(start=d, end=d)
