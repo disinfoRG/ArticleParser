@@ -9,7 +9,6 @@ import traceback
 import argparse
 from pathlib import Path
 from uuid import UUID
-import dateparser
 import pugsql
 import zipfile
 from functools import partial
