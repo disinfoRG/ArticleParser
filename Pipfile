@@ -8,6 +8,8 @@ pre-commit = "*"
 black = "==19.3b0"
 mypy = "*"
 invoke = "*"
+pytest = "*"
+articleparser = {editable = true,path = "."}
 
 [packages]
 pymysql = "*"
