@@ -18,7 +18,6 @@ pugsql = "*"
 python-dotenv = "*"
 readability-lxml = {git = "https://github.com/pm5/python-readability.git"}
 beautifulsoup4 = "*"
-jsonlines = "*"
 dateparser = "*"
 extruct = "*"
 tabulate = "*"
