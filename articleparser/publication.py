@@ -344,12 +344,12 @@ def to_publication(row):
     return {**row, "data": json.loads(row["data"])}
 
 
-def is_new_version(existing, publication):
+def matching_version(existing, publication):
     for old_version in existing:
         old_version = to_publication(old_version)
         if not is_updated(old_version, publication):
-            return False
-    return True
+            return old_version
+    return None
 
 
 def saver(parser_db, item, scraper):
@@ -361,6 +361,7 @@ def saver(parser_db, item, scraper):
         publication_id = parser_db.get_publication_id_by_article_id(
             scraper_id=scraper["scraper_id"], article_id=article_snapshot["article_id"]
         )
+        result = {}
         if publication_id is None:
             logger.debug(
                 "Saving publication of article %d.", article_snapshot["article_id"]
@@ -374,13 +375,19 @@ def saver(parser_db, item, scraper):
                     "data": json.dumps(publication["data"], ensure_ascii=False),
                 }
             )
+            result = {
+                "action": "create new publication",
+                "publication_id": publication_id,
+                "version": publication["version"],
+            }
         else:
             publication_id = publication_id["publication_id"]
             existing_pub = parser_db.get_publication_by_article_id(
                 scraper_id=scraper["scraper_id"],
                 article_id=article_snapshot["article_id"],
             )
-            if is_new_version(existing_pub, publication):
+            old = matching_version(existing_pub, publication)
+            if old is None:
                 publication["publication_id"] = publication_id
                 parser_db.update_publication(
                     **{
@@ -388,11 +395,21 @@ def saver(parser_db, item, scraper):
                         "data": json.dumps(publication["data"], ensure_ascii=False),
                     }
                 )
+                result = {
+                    "action": "create new version",
+                    "publication_id": publication_id,
+                    "version": publication["version"],
+                }
             else:
                 logger.debug(
                     "Skipping publication of article %d because content unchanged.",
                     article_snapshot["article_id"],
                 )
+                result = {
+                    "action": "skip unchanged version",
+                    "publication_id": publication_id,
+                    "version": publication["version"],
+                }
 
         parser_db.upsert_publication_map(
             article_id=article_snapshot["article_id"],
@@ -406,6 +423,14 @@ def saver(parser_db, item, scraper):
                     "parser": {"name": name, "version": version},
                 }
             ),
+        )
+        parser_db.upsert_parser_log(
+            parser_name="publication",
+            created_at=int(datetime.datetime.now().timestamp()),
+            scraper_id=scraper["scraper_id"],
+            article_id=article_snapshot["article_id"],
+            snapshot_at=article_snapshot["snapshot_at"],
+            data=json.dumps(result),
         )
         parser_db.update_parser_last_processed(
             parser_name=name,
