@@ -333,7 +333,7 @@ def is_updated(exist_pub, new_pub):
         "published_at",
         "author",
         "connect_from",
-        "data",
+        # "data",
     ]:
         if exist_pub[field] != new_pub[field]:
             return True
@@ -394,6 +394,10 @@ def saver(parser_db, item, scraper):
                         **publication,
                         "data": json.dumps(publication["data"], ensure_ascii=False),
                     }
+                )
+                logger.debug(
+                    "Update an old version of article %d",
+                    article_snapshot["article_id"],
                 )
                 result = {
                     "action": "create new version",
