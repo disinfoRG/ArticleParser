@@ -7,7 +7,6 @@ SELECT
   P.producer_id AS producer_id,
   COUNT(*) AS processed_count
 FROM publication_map as PM
-  JOIN publication as P
-  ON PM.publication_id = P.publication_id AND PM.version = P.version
+JOIN publication as P ON PM.publication_id = P.publication_id AND PM.version = P.version
 WHERE JSON_EXTRACT(PM.info, "$.last_processed_at") BETWEEN :start AND :end
 GROUP BY processed_date, producer_id
