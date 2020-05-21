@@ -119,6 +119,17 @@ SELECT DISTINCT(HEX(publication_id)) AS publication_id
 FROM publication_map
 WHERE scraper_id = :scraper_id AND article_id = :article_id
 
+-- :name get_publication :one
+SELECT
+  HEX(publication_id) AS publication_id,
+  version,
+  HEX(producer_id) AS producer_id,
+  canonical_url, title, publication_text, author, connect_from,
+  published_at, first_seen_at, last_updated_at,
+  data
+FROM publication
+WHERE publication_id = UNHEX(:publication_id) AND version = :version
+
 -- :name insert_publication :insert
 INSERT INTO publication
   (publication_id, version, producer_id, canonical_url, title, publication_text, published_at, first_seen_at, last_updated_at, author, connect_from, data)
