@@ -394,7 +394,7 @@ def saver(parser_db, item, scraper):
                     article_snapshot["article_id"],
                 )
 
-        parser_db.upsert_publication_mapping(
+        parser_db.upsert_publication_map(
             article_id=article_snapshot["article_id"],
             snapshot_at=article_snapshot["snapshot_at"],
             scraper_id=scraper["scraper_id"],

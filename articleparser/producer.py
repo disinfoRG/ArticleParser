@@ -49,7 +49,7 @@ def saver(queries, item, scraper):
                 site["site_id"],
             )
 
-        queries.upsert_producer_mapping(
+        queries.upsert_producer_map(
             site_id=site["site_id"],
             producer_id=producer_id,
             scraper_id=scraper["scraper_id"],

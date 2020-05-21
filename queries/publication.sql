@@ -47,7 +47,7 @@ SELECT
   canonical_url, title, publication_text, author, connect_from,
   published_at, first_seen_at, last_updated_at,
   data
-FROM publication_mapping as PM
+FROM publication_map as PM
   JOIN publication as P
   ON PM.publication_id = P.publication_id AND PM.version = P.version
 WHERE
@@ -59,7 +59,7 @@ OFFSET :offset
 -- :name get_published_month_by_producer_ranged_by_processed_at :many
 SELECT
   DISTINCT(DATE_FORMAT(FROM_UNIXTIME(P.published_at), "%Y-%m")) AS published_month
-FROM publication_mapping as PM
+FROM publication_map as PM
   JOIN publication as P
   ON PM.publication_id = P.publication_id AND PM.version = P.version
 WHERE
@@ -69,7 +69,7 @@ WHERE
 -- :name get_published_date_ranged_by_processed_at :many
 SELECT
   DISTINCT(DATE(FROM_UNIXTIME(P.published_at))) AS published_date
-FROM publication_mapping as PM
+FROM publication_map as PM
   JOIN publication as P
   ON PM.publication_id = P.publication_id AND PM.version = P.version
 WHERE
@@ -108,7 +108,7 @@ SELECT
   canonical_url, title, publication_text, author, connect_from,
   published_at, first_seen_at, last_updated_at,
   data
-FROM publication_mapping as PM
+FROM publication_map as PM
   JOIN publication as P
   ON PM.publication_id = P.publication_id AND PM.version = P.version
 WHERE PM.scraper_id = :scraper_id AND PM.article_id = :article_id
@@ -116,7 +116,7 @@ ORDER BY P.version ASC
 
 -- :name get_publication_id_by_article_id :one
 SELECT DISTINCT(HEX(publication_id)) AS publication_id
-FROM publication_mapping
+FROM publication_map
 WHERE scraper_id = :scraper_id AND article_id = :article_id
 
 -- :name insert_publication :insert

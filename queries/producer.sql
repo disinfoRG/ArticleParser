@@ -4,7 +4,7 @@ SELECT
   name, classification, url, first_seen_at, last_updated_at, data,
   scraper_id, site_id
 FROM producer
-JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
+JOIN producer_map ON producer.producer_id = producer_map.producer_id
 
 -- :name get_producer :one
 SELECT
@@ -12,7 +12,7 @@ SELECT
   name, classification, url, first_seen_at, last_updated_at, data,
   scraper_id, site_id
 FROM producer
-JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
+JOIN producer_map ON producer.producer_id = producer_map.producer_id
 WHERE producer.producer_id = UNHEX(:producer_id)
 
 -- :name get_producer_by_site_id :one
@@ -21,8 +21,8 @@ SELECT
   name, classification, url, first_seen_at, last_updated_at, data,
   scraper_id, site_id
 FROM producer
-JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
-WHERE producer_mapping.site_id = :site_id
+JOIN producer_map ON producer.producer_id = producer_map.producer_id
+WHERE producer_map.site_id = :site_id
 
 -- :name get_producer_with_stats :one
 SELECT
@@ -31,7 +31,7 @@ SELECT
   scraper_id, site_id,
   (SELECT COUNT(*) FROM publication WHERE producer_id = UNHEX(:producer_id)) AS publication_count
 FROM producer
-JOIN producer_mapping ON producer.producer_id = producer_mapping.producer_id
+JOIN producer_map ON producer.producer_id = producer_map.producer_id
 WHERE producer.producer_id = UNHEX(:producer_id)
 
 -- :name insert_producer :insert

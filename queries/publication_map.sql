@@ -1,5 +1,5 @@
--- :name upsert_publication_mapping :insert
-INSERT INTO publication_mapping
+-- :name upsert_publication_map :insert
+INSERT INTO publication_map
   (article_id, snapshot_at, publication_id, version, info, scraper_id)
 VALUES
   (:article_id, :snapshot_at, UNHEX(:publication_id), :version, :info, :scraper_id)
@@ -9,7 +9,7 @@ ON DUPLICATE KEY UPDATE
 -- :name get_publications_by_parser_version :many
 SELECT
   scraper_id, article_id, snapshot_at, publication_id, version, info
-FROM publication_mapping
+FROM publication_map
 WHERE
   JSON_EXTRACT(info, "$.parser.version") < :version
   -- XXX old version string
@@ -17,7 +17,7 @@ WHERE
 
 -- :name get_publications_by_parser_version_by_producer :many
 SELECT p0.scraper_id, p0.article_id, p0.snapshot_at, p0.publication_id, p0.version, p0.info
-FROM publication_mapping AS p0
+FROM publication_map AS p0
 JOIN publication AS p1 ON p0.publication_id = p1.publication_id AND p0.version = p1.version
 WHERE
   p1.producer_id = :producer_id
