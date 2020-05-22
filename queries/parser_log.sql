@@ -1,5 +1,5 @@
 -- :name upsert_parser_log :insert
 REPLACE parser_log
-  (scraper_id, article_id, snapshot_at, data)
+  (parser_name, created_at, scraper_id, article_id, snapshot_at, data)
 VALUES
-  (:scraper_id, :article_id, :snapshot_at, :data)
+  (:parser_name, :created_at, :scraper_id, :article_id, :snapshot_at, :data)
