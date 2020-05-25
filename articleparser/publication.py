@@ -379,6 +379,7 @@ def saver(parser_db, item, scraper):
             result = {
                 "action": "create new publication",
                 "publication_id": publication_id,
+                "published_at": int(publication["published_at"]),
                 "version": publication["version"],
             }
         else:
@@ -404,6 +405,7 @@ def saver(parser_db, item, scraper):
                 result = {
                     "action": "update a version",
                     "publication_id": publication_id,
+                    "published_at": int(publication["published_at"]),
                     "version": publication["version"],
                 }
             else:
@@ -427,6 +429,7 @@ def saver(parser_db, item, scraper):
                     result = {
                         "action": "create new version",
                         "publication_id": publication_id,
+                        "published_at": int(publication["published_at"]),
                         "version": publication["version"],
                     }
                 else:
@@ -437,6 +440,7 @@ def saver(parser_db, item, scraper):
                     result = {
                         "action": "skip unchanged version",
                         "publication_id": publication_id,
+                        "published_at": int(publication["published_at"]),
                         "version": publication["version"],
                     }
 
