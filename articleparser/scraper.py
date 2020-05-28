@@ -2,6 +2,9 @@ from typing import *
 import sqlalchemy as sa
 from sqlalchemy import sql
 import zlib
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Site(NamedTuple):
@@ -93,6 +96,52 @@ def query_snapshot(db, limit=10000, offset=0):
     )
 
 
+def query_latest_snapshot(db, limit=10000, offset=0):
+    latest = sql.expression.alias(
+        sql.select(
+            [
+                db("snapshot").c.article_id,
+                sql.expression.func.max(db("snapshot").c.snapshot_at).label(
+                    "snapshot_at"
+                ),
+            ]
+        )
+        .select_from(db("snapshot"))
+        .group_by(db("snapshot").c.article_id),
+        "S0",
+    )
+
+    return (
+        sql.select(
+            [
+                db("snapshot").c.article_id,
+                db("snapshot").c.snapshot_at,
+                db("snapshot").c.raw_data,
+                db("article").c.site_id,
+                db("article").c.url,
+                db("article").c.first_snapshot_at.label("first_seen_at"),
+                db("article").c.last_snapshot_at.label("last_updated_at"),
+                db("article").c.article_type,
+            ]
+        )
+        .select_from(
+            db("snapshot")
+            .join(
+                latest,
+                sql.and_(
+                    db("snapshot").c.article_id == latest.c.article_id,
+                    db("snapshot").c.snapshot_at == latest.c.snapshot_at,
+                ),
+            )
+            .join(
+                db("article"), db("snapshot").c.article_id == db("article").c.article_id
+            )
+        )
+        .limit(limit)
+        .offset(offset)
+    )
+
+
 def get_snapshots(
     db,
     article_id=None,
@@ -100,6 +149,7 @@ def get_snapshots(
     snapshot_at_later_than=None,
     site_id=None,
     url=None,
+    latest=False,
     limit=10000,
     offset=0,
 ):
@@ -118,7 +168,8 @@ def get_snapshots(
     if url is not None:
         clauses.append(db("article").c.url_hash == zlib.crc32(url.encode("utf-8")))
         clauses.append(db("article").c.url == url)
-    return query_snapshot(db).where(sql.and_(*clauses))
+    query = query_snapshot if not latest else query_latest_snapshot
+    return query(db).where(sql.and_(*clauses))
 
 
 def get_snapshot(db, article_id, snapshot_at):

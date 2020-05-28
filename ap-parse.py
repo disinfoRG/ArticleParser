@@ -32,7 +32,10 @@ def get_all_unprocessed_articles(scraper_db, parser_db, args):
     )
 
     return DbGetter(
-        scraper_db, scraper.get_snapshots, snapshot_at_later_than=later_than
+        scraper_db,
+        scraper.get_snapshots,
+        snapshot_at_later_than=later_than,
+        latest=args.latest,
     )
 
 
@@ -63,6 +66,11 @@ def parse_args():
         "id", type=int, help="id of the publication to parse in parser db", nargs="?"
     )
     pub_cmd.add_argument(
+        "--latest",
+        action="store_true",
+        help="only parse the newest snapshot of each article",
+    )
+    pub_cmd.add_argument(
         "--article-id", type=int, help="id the article to parse in news db", nargs="?"
     )
     pub_cmd.add_argument("--url", help="url the article to parse in news db", nargs="?")
@@ -89,7 +97,7 @@ def main(args):
         sc = parser_db.get_scraper_by_name(scraper_name=args.scraper_name)
         sc["data"] = db.to_json(sc["data"])
         scraper_db = scraper.ScraperDb(
-            sc["scraper_name"], os.getenv(sc["data"]["db_url_var"]), sc["data"],
+            sc["scraper_name"], os.getenv(sc["data"]["db_url_var"]), sc["data"]
         )
 
         if args.command == "producer":
@@ -123,13 +131,21 @@ def main(args):
                 raise RuntimeError("Unimplemented")
             elif args.article_id is not None:
                 data_getter = DbGetter(
-                    scraper_db, scraper.get_snapshots, article_id=args.article_id
+                    scraper_db,
+                    scraper.get_snapshots,
+                    article_id=args.article_id,
+                    latest=args.latest,
                 )
             elif args.url is not None:
-                data_getter = DbGetter(scraper_db, scraper.get_snapshots, url=args.url)
+                data_getter = DbGetter(
+                    scraper_db, scraper.get_snapshots, url=args.url, latest=args.latest
+                )
             elif args.site_id is not None:
                 data_getter = DbGetter(
-                    scraper_db, scraper.get_snapshots, site_id=args.site_id
+                    scraper_db,
+                    scraper.get_snapshots,
+                    site_id=args.site_id,
+                    latest=args.latest,
                 )
             elif args.update:
                 raise RuntimeError("Unimplemented")
