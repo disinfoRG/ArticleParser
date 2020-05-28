@@ -35,7 +35,7 @@ def get_all_unprocessed_articles(scraper_db, parser_db, args):
         scraper_db,
         scraper.get_snapshots,
         snapshot_at_later_than=later_than,
-        latest=args.latest,
+        first=args.first,
     )
 
 
@@ -66,9 +66,9 @@ def parse_args():
         "id", type=int, help="id of the publication to parse in parser db", nargs="?"
     )
     pub_cmd.add_argument(
-        "--latest",
+        "--first",
         action="store_true",
-        help="only parse the newest snapshot of each article",
+        help="only parse the first snapshot of each article",
     )
     pub_cmd.add_argument(
         "--article-id", type=int, help="id the article to parse in news db", nargs="?"
@@ -134,18 +134,18 @@ def main(args):
                     scraper_db,
                     scraper.get_snapshots,
                     article_id=args.article_id,
-                    latest=args.latest,
+                    first=args.first,
                 )
             elif args.url is not None:
                 data_getter = DbGetter(
-                    scraper_db, scraper.get_snapshots, url=args.url, latest=args.latest
+                    scraper_db, scraper.get_snapshots, url=args.url, first=args.first
                 )
             elif args.site_id is not None:
                 data_getter = DbGetter(
                     scraper_db,
                     scraper.get_snapshots,
                     site_id=args.site_id,
-                    latest=args.latest,
+                    first=args.first,
                 )
             elif args.update:
                 raise RuntimeError("Unimplemented")
