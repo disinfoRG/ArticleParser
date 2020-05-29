@@ -465,7 +465,7 @@ def saver(parser_db, item, scraper):
                 }
             ),
         )
-        parser_db.upsert_parser_log(
+        parser_db.save_parser_result(
             parser_name="publication",
             created_at=int(datetime.datetime.now().timestamp()),
             scraper_id=scraper["scraper_id"],
