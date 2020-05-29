@@ -21,4 +21,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_index("ik_created_at")
+    op.drop_index("ik_created_at", table_name="parser_log")
