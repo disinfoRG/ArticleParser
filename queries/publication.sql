@@ -39,6 +39,21 @@ WHERE
 LIMIT :limit
 OFFSET :offset
 
+-- :name get_publications_by_producer_with_null_published_at :many
+SELECT
+  HEX(publication_id) AS publication_id,
+  version,
+  HEX(producer_id) AS producer_id,
+  canonical_url, title, publication_text, author, connect_from,
+  published_at, first_seen_at, last_updated_at,
+  data
+FROM publication
+WHERE
+  producer_id = UNHEX(:producer_id)
+  AND published_at IS NULL
+LIMIT :limit
+OFFSET :offset
+
 -- :name get_publications_by_producer_ranged_by_processed_at :many
 SELECT
   HEX(P.publication_id) AS publication_id,
@@ -65,7 +80,6 @@ FROM publication_map as PM
 WHERE
   P.producer_id = UNHEX(:producer_id)
   AND JSON_EXTRACT(PM.info, "$.last_processed_at") BETWEEN :start AND :end
-
 -- :name get_published_date_ranged_by_processed_at :many
 SELECT
   DISTINCT(DATE(FROM_UNIXTIME(P.published_at))) AS published_date

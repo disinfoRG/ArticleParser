@@ -89,6 +89,27 @@ def upload_to_drive(drive, producer, parent_dir_id, outzip):
     return upload_id
 
 
+def publish_one_month(
+    producer, published_at: Month, output_dir, full_text: bool = False
+):
+    for day in published_at.iterdate():
+        logger.debug(day)
+        publish_one_day(day, producer, output_dir=output_dir, full_text=full_text)
+
+
+def publish_null_published_at(producer, output_dir, full_text: bool = False):
+    output = Path(output_dir) / "no_date.jsonl"
+    data_getter = QueryGetter(
+        queries.get_publications_by_producer_with_null_published_at,
+        producer_id=of_uuid(producer["producer_id"]),
+    )
+    run_batch(
+        data_getter=data_getter,
+        processor=partial(process_publication_item, full_text=full_text),
+        data_saver=JsonItemSaver(filename=output),
+    )
+
+
 def publish_to_drive(
     drive, producer, published_at: Month, full_text=False, tmp_dir="tmp"
 ):
@@ -96,12 +117,17 @@ def publish_to_drive(
 
     tmp_dir = Path(tmp_dir)
     tmp_dir.mkdir(exist_ok=True)
-    outzip = Path(published_at.isoformat() + ".zip")
-    clean_output(tmp_dir, outzip)
 
-    for day in published_at.iterdate():
-        logger.debug(day)
-        publish_one_day(day, producer, output_dir=tmp_dir, full_text=full_text)
+    if published_at is None:
+        outzip = Path("no_date.zip")
+        clean_output(tmp_dir, outzip)
+        publish_null_published_at(producer, output_dir=tmp_dir, full_text=full_text)
+    else:
+        outzip = Path(published_at.isoformat() + ".zip")
+        clean_output(tmp_dir, outzip)
+        publish_one_month(
+            producer, published_at, output_dir=tmp_dir, full_text=full_text
+        )
 
     if len(list(tmp_dir.iterdir())) == 0:
         logger.debug("empty archive; done")
@@ -197,7 +223,9 @@ def main(args):
                         publish_to_drive(
                             drive=gdrive,
                             producer=producer,
-                            published_at=Month.fromisoformat(row["published_month"]),
+                            published_at=Month.fromisoformat(row["published_month"])
+                            if row["published_month"] is not None
+                            else None,
                             full_text=args.full_text,
                         )
                 else:
