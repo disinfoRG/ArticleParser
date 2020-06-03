@@ -1,49 +1,19 @@
 
-# ArticleParser
+ArticleParser
+===
 
-### Running
+ArticleParser is part of [0archive project](https://0archive.tw/).  Its purpose is to
 
-We use MySQL.  To setup database connections:
+1. pull raw data from several scraper databases,
+2. translate raw data into a standardized format and save it to the database of ArticleParser, and then
+3. publish the resulting dataset in the database to several places for storage.
 
-1. Copy `.env.default` to `.env`, and set `DB_URL`, `SCRAPER_DB_URL` values.  Start the MySQl connection string with `mysql+pymysql://` so that sqlalchemy uses the correct driver.
+An example of upstream scraper is [ZeroScraper](https://github.com/disinfoRG/ZeroScraper/) of 0archive.  Dataset publishing can currently output to local files or Google Drive folders.
 
-We use Python 3.7.  Install Python dependencies and run database migrations:
+There is a diagram of [0archive system architecture](https://g0v.hackmd.io/@chihao/0archive/https%3A%2F%2Fdocs.google.com%2Fpresentation%2Fd%2F1RPRAGsHJWNR87AW_L2v-GHCc4S5eFUPNFwcmCz0_eSw%2Fedit%23slide%3Did.p) to which you can refer.
 
-```sh
-$ pip install pipenv
-$ pipenv install
-# start a shell in virtual env
-$ pipenv shell
-# run db migrations
-$ alembic upgrade head
-```
+The code runs on Python 3.7 or above.  The system is tested on MariaDB 10.3.
 
-Then
+* [Installation Guide](https://g0v.hackmd.io/OgKshAg-SFau9xm_SuZRew?view)
+* [Developer Guide](https://g0v.hackmd.io/7L3brtf3QQWyfYqa_nizFw?view)
 
-```sh
-$ ./ap.py parse producer
-$ ./ap.py parse --limit 1000 publication
-```
-
-You can run these commands multiple times to parse source data in batch.  `--limit <number>` sets the number of entries to parse for each batch.
-
-You can now export the parsed data with
-
-```sh
-$ mkdir -p datasets/publications
-$ python ./publish.py -f jsonl -o datasets/producers.jsonl producers
-$ python ./publish.py -f jsonl -g published_day -o datasets/publications publications
-```
-
-## Development
-
-We use Python 3.7.  Install Python dependencies with pipenv:
-
-```sh
-$ pip install pipenv
-$ pipenv install --dev
-$ pipenv shell
-
-# install pre-commit hooks before hacking for the first time
-$ pre-commit install
-```
