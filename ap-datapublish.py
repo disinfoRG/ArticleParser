@@ -150,7 +150,6 @@ def parse_args():
     parser.add_argument(
         "-f", "--format", choices=["jsonl"], help="export format", default="jsonl"
     )
-    parser.add_argument("-o", "--output", default="-", help="save to file")
     cmds = parser.add_subparsers(
         title="data class to publish", dest="command", required=True
     )
