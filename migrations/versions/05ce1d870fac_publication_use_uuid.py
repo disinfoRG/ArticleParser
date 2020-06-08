@@ -65,6 +65,7 @@ def upgrade():
         "publication_uuid",
         new_column_name="publication_id",
         existing_type=BINARY(16),
+        nullable=False,
     )
     op.alter_column(
         "publication_mapping",
@@ -77,6 +78,7 @@ def upgrade():
         "publication_uuid",
         new_column_name="publication_id",
         existing_type=BINARY(16),
+        nullable=False,
     )
 
 
@@ -98,6 +100,7 @@ def downgrade():
         "publication_id",
         new_column_name="publication_uuid",
         existing_type=BINARY(16),
+        nullable=False,
     )
     op.alter_column(
         "publication",

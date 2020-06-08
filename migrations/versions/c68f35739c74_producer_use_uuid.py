@@ -65,6 +65,7 @@ def upgrade():
         "producer_uuid",
         new_column_name="producer_id",
         existing_type=BINARY(16),
+        nullable=False,
     )
     op.alter_column(
         "producer_mapping",
@@ -89,6 +90,7 @@ def upgrade():
         "producer_uuid",
         new_column_name="producer_id",
         existing_type=BINARY(16),
+        nullable=False,
     )
 
 
@@ -122,6 +124,7 @@ def downgrade():
         "producer_id",
         new_column_name="producer_uuid",
         existing_type=BINARY(16),
+        nullable=False,
     )
     op.alter_column(
         "producer",

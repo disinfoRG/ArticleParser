@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade():
     op.alter_column(
-        "producer_mapping", "site_id", autoincrement=False, existing_type=sa.Integer
+        "producer_mapping", "site_id", autoincrement=False, existing_type=sa.Integer, nullable=False,
     )
     op.alter_column(
         "publication_mapping", "info", nullable=False, existing_type=sa.JSON
