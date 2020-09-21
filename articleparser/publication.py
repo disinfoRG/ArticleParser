@@ -14,6 +14,7 @@ from . import ptt
 from . import pttread
 from . import appledaily
 from . import toutiao
+from . import fb
 from . import scraper
 from . import version, Soups, Snapshot
 from .dateutil import parsedatetime
@@ -161,8 +162,8 @@ def parse_published_at_from_opengraph(og):
 
 
 def parse_published_at_from_text(soups: Soups):
-    dt_pat = re.compile("(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})")
-    m = dt_pat.search(str(soups.body))
+    dt_pat = r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})"
+    m = re.search(dt_pat, str(soups.body))
     if m is not None:
         return parsedatetime(m.group(1))
     return None
@@ -270,6 +271,7 @@ parsers = {
     "toutiao": toutiao.parse_publication,
     "ptt": ptt.parse_publication,
     "pttread": pttread.parse_publication,
+    "fb": fb.parse_publication,
     "default": parse_publication,
 }
 
@@ -279,6 +281,8 @@ def process_item(snapshot: Snapshot, parser: str = "default"):
     if parser == "default":
         if soups.snapshot.article_type == "PTT":
             return parsers["ptt"](soups)
+        elif soups.snapshot.article_type == "FBPost":
+            return parsers["fb"](soups)
         elif "appledaily" in soups.snapshot.url:
             return parsers["appledaily"](soups)
         elif "toutiao.com" in soups.snapshot.url:
