@@ -27,6 +27,7 @@ google-auth = "*"
 google-auth-httplib2 = "*"
 google-auth-oauthlib = "*"
 calmjs-parse = "*"
+oauth2client = "*"
 
 [requires]
 python_version = "3.7"
