@@ -20,7 +20,7 @@ from articleparser.publish import (
 )
 from articleparser.db import of_uuid, of_datetime, to_producer
 from articleparser.drive import GoogleDrive
-from articleparser.dateutil import *
+from articleparser.dateutil import Month, date, parse_date_range, day_start, day_end
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
@@ -199,7 +199,7 @@ def main(args):
             if args.drive and args.drive != "local":
                 row = queries.get_drive_by_name(name=args.drive)
                 if row is None:
-                    raise RuntimeError(f"non-existent drive '{drive}'")
+                    raise RuntimeError(f"non-existent drive '{args.drive}'")
                 gdrive = GoogleDrive(**row, service_account=args.service_account)
                 if args.published_at:
                     if not isinstance(args.published_at, Month):
