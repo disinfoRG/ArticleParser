@@ -142,7 +142,7 @@ def publish_to_drive(
     try:
         upload_id = upload_to_drive(drive, producer, parent_dir_id, outzip)
     except googleapiclient.errors.HttpError:
-        print("%s %s %s %s", drive, producer, published_at, full_text)
+        print(f"{producer}, {published_at} Failed with HttpError...")
         print(traceback.format_exc())
 
     clean_output(tmp_dir, outzip)
