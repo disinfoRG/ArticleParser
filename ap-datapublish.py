@@ -21,6 +21,7 @@ from articleparser.publish import (
 from articleparser.db import of_uuid, of_datetime, to_producer
 from articleparser.drive import GoogleDrive
 from articleparser.dateutil import Month, date, parse_date_range, day_start, day_end
+import googleapiclient.errors
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger(__name__)
@@ -138,7 +139,11 @@ def publish_to_drive(
             zf.write(f, arcname=f.name)
 
     parent_dir_id = make_parent_dir(drive, producer, exist_ok=True)
-    upload_id = upload_to_drive(drive, producer, parent_dir_id, outzip)
+    try:
+        upload_id = upload_to_drive(drive, producer, parent_dir_id, outzip)
+    except googleapiclient.errors.HttpError:
+        print("%s %s %s %s", drive, producer, published_at, full_text)
+        print(traceback.format_exc())
 
     clean_output(tmp_dir, outzip)
 
